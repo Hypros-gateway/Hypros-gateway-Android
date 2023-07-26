@@ -2,8 +2,8 @@
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content">
-
+    android:layout_height="wrap_content"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <TextView
         android:id="@+id/tv_device_name"
@@ -13,7 +13,7 @@
         android:layout_marginTop="12dp"
         android:gravity="center_vertical"
         android:singleLine="true"
-        android:text=""
+        tools:text="MK107-1F65"
         android:textColor="@color/black_333333"
         android:textSize="15sp"
         app:layout_constraintLeft_toLeftOf="parent"
@@ -23,8 +23,8 @@
         android:id="@+id/tv_device_mac"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="20dp"
-        android:text=""
+        android:layout_marginTop="10dp"
+        tools:text="AC4F128B1F65"
         android:textColor="@color/grey_b3b3b3"
         android:textSize="13sp"
         app:layout_constraintLeft_toLeftOf="@id/tv_device_name"
@@ -37,7 +37,7 @@
         android:layout_marginRight="12dp"
         android:drawableRight="@drawable/arrow_right"
         android:drawablePadding="20dp"
-        android:text=""
+        tools:text="Online"
         android:textColor="@color/grey_b3b3b3"
         android:textSize="15sp"
         app:layout_constraintBottom_toBottomOf="@id/tv_device_mac"

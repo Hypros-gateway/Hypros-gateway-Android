@@ -111,6 +111,18 @@ public class OrderTaskAssembler {
         return task;
     }
 
+    public static OrderTask getMQTTNtpUrl() {
+        ParamsTask task = new ParamsTask();
+        task.setData(ParamsKeyEnum.KEY_NTP_URL);
+        return task;
+    }
+
+    public static OrderTask getTimezone() {
+        ParamsTask task = new ParamsTask();
+        task.setData(ParamsKeyEnum.KEY_NTP_TIME_ZONE_PRO);
+        return task;
+    }
+
     public static OrderTask getMQTTSubscribeTopic() {
         ParamsTask task = new ParamsTask();
         task.setData(ParamsKeyEnum.KEY_MQTT_SUBSCRIBE_TOPIC);

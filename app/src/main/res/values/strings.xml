@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">MKScannerGW</string>
+    <string name="app_name">HyprosGW</string>
     <string name="cancel">Cancel</string>
     <string name="confirm">Confirm</string>
     <string name="save">Save</string>
@@ -33,7 +33,7 @@
     <string name="mqtt_verify_client_id_empty">ClientId error</string>
     <string name="mqtt_verify_device_id_empty">DeivceId error</string>
     <string name="mqtt_verify_host">Host error</string>
-    <string name="mqtt_verify_port">Port range is 0~65535</string>
+    <string name="mqtt_verify_port">Port range is 1~65535</string>
     <string name="mqtt_verify_port_empty">Port error</string>
     <string name="mqtt_verify_catalogue">Catalogue error</string>
     <string name="mqtt_verify_file_path">File Path error</string>
@@ -80,15 +80,15 @@
 
     <string name="ensure">OK</string>
 
-    <string name="permission_storage_close_content">Please find it in cellphone setting- permission, and allow MKScannerGW use the Storage and location permission</string>
-    <string name="permission_ble_close_content">Please find it in cellphone setting- permission, and allow MKScannerGW use the bluetooth and location permission</string>
+    <string name="permission_storage_close_content">Please find it in cellphone setting- permission, and allow HyprosGW use the Storage and location permission</string>
+    <string name="permission_ble_close_content">Please find it in cellphone setting- permission, and allow HyprosGW use the bluetooth and location permission</string>
     <string name="permission_open">OK</string>
-    <string name="permission_storage_need_content">MKScannerGW requires access to Storage and location permission. If the permissions are not on, MKScannerGW cannot be used normally.</string>
+    <string name="permission_storage_need_content">HyprosGW requires access to Storage and location permission. If the permissions are not on, HyprosGW cannot be used normally.</string>
     <string name="location_need_title">Turn on Location permission</string>
-    <string name="location_need_content">After that, MKScannerGW could search and connect with the device</string>
-    <string name="permission_location_close_content">Please find it in cellphone setting- permission, and allow MKScannerGW use the Location permission</string>
-    <string name="permission_location_need_content">MKScannerGW requires access to Location permission. If the permissions are not on, MKScannerGW cannot be used normally.</string>
-    <string name="permission_ble_content">MKScannerGW requires access to bluetooth scan contract and location permission. If the permissions are not on, MKScannerGW cannot be used normally.</string>
+    <string name="location_need_content">After that, HyprosGW could search and connect with the device</string>
+    <string name="permission_location_close_content">Please find it in cellphone setting- permission, and allow HyprosGW use the Location permission</string>
+    <string name="permission_location_need_content">HyprosGW requires access to Location permission. If the permissions are not on, HyprosGW cannot be used normally.</string>
+    <string name="permission_ble_content">HyprosGW requires access to bluetooth scan contract and location permission. If the permissions are not on, HyprosGW cannot be used normally.</string>
     
     
     <string name="version_info">Version:%s</string>

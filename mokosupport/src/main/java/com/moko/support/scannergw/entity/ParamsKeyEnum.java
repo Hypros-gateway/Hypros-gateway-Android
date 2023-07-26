@@ -33,7 +33,7 @@ public enum ParamsKeyEnum implements Serializable {
     KEY_CHANNEL_DOMAIN(0x1A),
     ;
 
-    private int paramsKey;
+    private final int paramsKey;
 
     ParamsKeyEnum(int paramsKey) {
         this.paramsKey = paramsKey;

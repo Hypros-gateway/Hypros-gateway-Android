@@ -26,30 +26,7 @@ public class ParamsTask extends OrderTask {
     }
 
     public void setData(ParamsKeyEnum key) {
-        switch (key) {
-            case KEY_MQTT_CONNECT_MODE:
-            case KEY_MQTT_HOST:
-            case KEY_MQTT_PORT:
-            case KEY_MQTT_CLEAN_SESSION:
-            case KEY_MQTT_KEEP_ALIVE:
-            case KEY_MQTT_QOS:
-            case KEY_MQTT_CLIENT_ID:
-            case KEY_MQTT_DEVICE_ID:
-            case KEY_MQTT_SUBSCRIBE_TOPIC:
-            case KEY_MQTT_PUBLISH_TOPIC:
-
-            case KEY_DEVICE_MAC:
-            case KEY_DEVICE_NAME:
-            case KEY_PRODUCT_MODEL:
-            case KEY_MANUFACTURER:
-            case KEY_HARDWARE_VERSION:
-            case KEY_SOFTWARE_VERSION:
-            case KEY_FIRMWARE_VERSION:
-            case KEY_DEVICE_TYPE:
-            case KEY_CHANNEL_DOMAIN:
-                createGetConfigData(key.getParamsKey());
-                break;
-        }
+        createGetConfigData(key.getParamsKey());
     }
 
     public void setData(ParamsLongKeyEnum key) {
@@ -392,7 +369,7 @@ public class ParamsTask extends OrderTask {
                 byte[] remainBytes = Arrays.copyOfRange(value, 6, 6 + length);
                 dataBytesStr += MokoUtils.bytesToHexString(remainBytes);
             } else {
-                if (length == 0){
+                if (length == 0) {
                     data = new byte[5];
                     data[0] = (byte) 0xEE;
                     data[1] = (byte) 0x00;

@@ -46,9 +46,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import no.nordicsemi.android.support.v18.scanner.ScanRecord;
 import no.nordicsemi.android.support.v18.scanner.ScanResult;
 
-
 public class DeviceScannerActivity extends BaseActivity<ActivityScannerBinding> implements MokoScanDeviceCallback, BaseQuickAdapter.OnItemClickListener {
-
     private Animation animation = null;
     private DeviceInfoAdapter mAdapter;
     private ConcurrentHashMap<String, DeviceInfo> mDeviceMap;
@@ -75,12 +73,9 @@ public class DeviceScannerActivity extends BaseActivity<ActivityScannerBinding> 
         mokoBleScanner = new MokoBleScanner(this);
         mHandler = new Handler(Looper.getMainLooper());
         mSavedPassword = SPUtiles.getStringValue(this, AppConstants.SP_KEY_PASSWORD, "");
-        if (animation == null) {
-            startScan();
-        }
+        if (animation == null) startScan();
         mBind.ivRefresh.setOnClickListener(v -> {
-            if (isWindowLocked())
-                return;
+            if (isWindowLocked()) return;
             if (animation == null) {
                 startScan();
             } else {
@@ -100,9 +95,7 @@ public class DeviceScannerActivity extends BaseActivity<ActivityScannerBinding> 
         mDeviceMap.clear();
         new Thread(() -> {
             while (animation != null) {
-                runOnUiThread(() -> {
-                    mAdapter.replaceData(mDevices);
-                });
+                runOnUiThread(() -> mAdapter.replaceData(mDevices));
                 try {
                     Thread.sleep(500);
                 } catch (InterruptedException e) {
@@ -122,8 +115,9 @@ public class DeviceScannerActivity extends BaseActivity<ActivityScannerBinding> 
         if (map == null || map.isEmpty()) return;
         byte[] data = map.get(new ParcelUuid(OrderServices.SERVICE_ADV.getUuid()));
         if (data == null || data.length != 1) return;
-        if ((data[0] & 0xff) != 0x03) return;
-        deviceInfo.deviceType = data[0] & 0xFF;
+        int type = data[0] & 0xff;
+        if (type != 3 && type != 4 && type != 5) return;
+        deviceInfo.deviceType = type;
         mDeviceMap.put(deviceInfo.mac, deviceInfo);
     }
 

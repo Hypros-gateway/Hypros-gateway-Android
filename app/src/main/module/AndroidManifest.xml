@@ -102,19 +102,19 @@
             android:screenOrientation="portrait"
             android:windowSoftInputMode="adjustPan" />
         <activity
-            android:name="com.moko.hyprosgw.activity.BeaconTypeFilterActivity"
+            android:name="com.moko.hyprosgw.activity.filter.BeaconTypeFilterActivity"
             android:screenOrientation="portrait"
             android:windowSoftInputMode="adjustPan" />
         <activity
-            android:name="com.moko.hyprosgw.activity.DuplicateDataFilterActivity"
+            android:name="com.moko.hyprosgw.activity.filter.DuplicateDataFilterActivity"
             android:screenOrientation="portrait"
             android:windowSoftInputMode="adjustPan" />
         <activity
-            android:name="com.moko.hyprosgw.activity.FilterOptionsAActivity"
+            android:name="com.moko.hyprosgw.activity.filter.FilterOptionsAActivity"
             android:screenOrientation="portrait"
             android:windowSoftInputMode="adjustPan" />
         <activity
-            android:name="com.moko.hyprosgw.activity.FilterOptionsBActivity"
+            android:name="com.moko.hyprosgw.activity.filter.FilterOptionsBActivity"
             android:screenOrientation="portrait"
             android:windowSoftInputMode="adjustPan" />
         <activity
@@ -126,54 +126,54 @@
             android:screenOrientation="portrait"
             android:windowSoftInputMode="adjustPan" />
         <activity
-            android:name="com.moko.hyprosgw.activity.ScannerUploadOptionProActivity"
+            android:name="com.moko.hyprosgw.activity.ScannerUploadOptionActivity"
             android:screenOrientation="portrait"
             android:windowSoftInputMode="adjustPan" />
         <activity
-            android:name="com.moko.hyprosgw.activity.FilterMacAddressActivity"
+            android:name="com.moko.hyprosgw.activity.filter.FilterMacAddressActivity"
             android:hardwareAccelerated="true"
             android:screenOrientation="portrait"
             android:windowSoftInputMode="adjustPan" />
         <activity
-            android:name="com.moko.hyprosgw.activity.FilterAdvNameActivity"
+            android:name="com.moko.hyprosgw.activity.filter.FilterAdvNameActivity"
             android:hardwareAccelerated="true"
             android:screenOrientation="portrait"
             android:windowSoftInputMode="adjustPan" />
         <activity
-            android:name="com.moko.hyprosgw.activity.FilterRawDataSwitchActivity"
+            android:name="com.moko.hyprosgw.activity.filter.FilterRawDataSwitchActivity"
             android:screenOrientation="portrait"
             android:windowSoftInputMode="adjustPan" />
         <activity
-            android:name="com.moko.hyprosgw.activity.FilterIBeaconActivity"
+            android:name="com.moko.hyprosgw.activity.filter.FilterIBeaconActivity"
             android:screenOrientation="portrait"
             android:windowSoftInputMode="adjustPan" />
         <activity
-            android:name="com.moko.hyprosgw.activity.FilterUIDActivity"
+            android:name="com.moko.hyprosgw.activity.filter.FilterUIDActivity"
             android:screenOrientation="portrait"
             android:windowSoftInputMode="adjustPan" />
         <activity
-            android:name="com.moko.hyprosgw.activity.FilterUrlActivity"
+            android:name="com.moko.hyprosgw.activity.filter.FilterUrlActivity"
             android:screenOrientation="portrait"
             android:windowSoftInputMode="adjustPan" />
         <activity
-            android:name="com.moko.hyprosgw.activity.FilterTLMActivity"
+            android:name="com.moko.hyprosgw.activity.filter.FilterTLMActivity"
             android:screenOrientation="portrait"
             android:windowSoftInputMode="adjustPan" />
         <activity
-            android:name="com.moko.hyprosgw.activity.FilterMKIBeaconActivity"
+            android:name="com.moko.hyprosgw.activity.filter.FilterMKIBeaconActivity"
             android:screenOrientation="portrait"
             android:windowSoftInputMode="adjustPan" />
         <activity
-            android:name="com.moko.hyprosgw.activity.FilterMKIBeaconAccActivity"
+            android:name="com.moko.hyprosgw.activity.filter.FilterMKIBeaconAccActivity"
             android:screenOrientation="portrait"
             android:windowSoftInputMode="adjustPan" />
         <activity
-            android:name="com.moko.hyprosgw.activity.FilterOtherActivity"
+            android:name="com.moko.hyprosgw.activity.filter.FilterOtherActivity"
             android:hardwareAccelerated="true"
             android:screenOrientation="portrait"
             android:windowSoftInputMode="adjustPan" />
         <activity
-            android:name="com.moko.hyprosgw.activity.UploadDataOptionProActivity"
+            android:name="com.moko.hyprosgw.activity.UploadDataOptionActivity"
             android:screenOrientation="portrait"
             android:windowSoftInputMode="adjustPan" />
         <activity
@@ -181,7 +181,7 @@
             android:screenOrientation="portrait"
             android:windowSoftInputMode="adjustPan" />
         <activity
-            android:name="com.moko.hyprosgw.activity.SystemTimeProActivity"
+            android:name="com.moko.hyprosgw.activity.SystemTimeActivity"
             android:screenOrientation="portrait"
             android:windowSoftInputMode="adjustPan" />
         <activity
@@ -190,7 +190,7 @@
             android:screenOrientation="portrait"
             android:windowSoftInputMode="adjustPan" />
         <activity
-            android:name="com.moko.hyprosgw.activity.OTAProActivity"
+            android:name="com.moko.hyprosgw.activity.OTAActivity"
             android:screenOrientation="portrait"
             android:windowSoftInputMode="adjustPan" />
         <activity

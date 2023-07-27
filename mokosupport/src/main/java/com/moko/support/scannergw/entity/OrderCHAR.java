@@ -10,7 +10,7 @@ public enum OrderCHAR implements Serializable {
     CHAR_PARAMS(UUID.fromString("0000AA03-0000-1000-8000-00805F9B34FB")),
     ;
 
-    private UUID uuid;
+    private final UUID uuid;
 
     OrderCHAR(UUID uuid) {
         this.uuid = uuid;

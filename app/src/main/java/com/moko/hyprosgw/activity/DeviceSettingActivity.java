@@ -50,10 +50,8 @@ import java.lang.reflect.Type;
 public class DeviceSettingActivity extends BaseActivity<ActivityDeviceSettingBinding> {
     private final String FILTER_ASCII = "[ -~]*";
     public static String TAG = DeviceSettingActivity.class.getSimpleName();
-
     private MokoDevice mMokoDevice;
     private MQTTConfig appMqttConfig;
-
     private Handler mHandler;
     private InputFilter filter;
 
@@ -63,7 +61,6 @@ public class DeviceSettingActivity extends BaseActivity<ActivityDeviceSettingBin
             if (!(source + "").matches(FILTER_ASCII)) {
                 return "";
             }
-
             return null;
         };
 
@@ -340,14 +337,22 @@ public class DeviceSettingActivity extends BaseActivity<ActivityDeviceSettingBin
             ToastUtils.showToast(this, R.string.device_offline);
             return;
         }
-        if ((mMokoDevice.deviceType & 0x0F) > 1) {
-            // MK107 Pro
-            Intent i = new Intent(this, SystemTimeProActivity.class);
-            i.putExtra(AppConstants.EXTRA_KEY_DEVICE, mMokoDevice);
-            startActivity(i);
+        Intent i = new Intent(this, SystemTimeActivity.class);
+        i.putExtra(AppConstants.EXTRA_KEY_DEVICE, mMokoDevice);
+        startActivity(i);
+    }
+
+    public void onAdvertiseIBeacon(View view) {
+        if (isWindowLocked()) return;
+        if (!MQTTSupport.getInstance().isConnected()) {
+            ToastUtils.showToast(this, R.string.network_error);
             return;
         }
-        Intent i = new Intent(this, SystemTimeActivity.class);
+        if (!mMokoDevice.isOnline) {
+            ToastUtils.showToast(this, R.string.device_offline);
+            return;
+        }
+        Intent i = new Intent(this, AdvertiseIBeaconActivity.class);
         i.putExtra(AppConstants.EXTRA_KEY_DEVICE, mMokoDevice);
         startActivity(i);
     }
@@ -363,16 +368,9 @@ public class DeviceSettingActivity extends BaseActivity<ActivityDeviceSettingBin
             ToastUtils.showToast(this, R.string.device_offline);
             return;
         }
-        if ((mMokoDevice.deviceType & 0x0F) > 1) {
-            // MK107 Pro
-            Intent i = new Intent(this, OTAProActivity.class);
-            i.putExtra(AppConstants.EXTRA_KEY_DEVICE, mMokoDevice);
-            startActivity(i);
-            return;
-        }
-        Intent intent = new Intent(this, OTAActivity.class);
-        intent.putExtra(AppConstants.EXTRA_KEY_DEVICE, mMokoDevice);
-        startActivity(intent);
+        Intent i = new Intent(this, OTAActivity.class);
+        i.putExtra(AppConstants.EXTRA_KEY_DEVICE, mMokoDevice);
+        startActivity(i);
     }
 
     public void onDeviceInfo(View view) {
@@ -386,14 +384,7 @@ public class DeviceSettingActivity extends BaseActivity<ActivityDeviceSettingBin
             ToastUtils.showToast(this, R.string.device_offline);
             return;
         }
-        if ((mMokoDevice.deviceType & 0x0F) > 1) {
-            // MK107 Pro
-            Intent i = new Intent(this, DeviceInfoProActivity.class);
-            i.putExtra(AppConstants.EXTRA_KEY_DEVICE, mMokoDevice);
-            startActivity(i);
-            return;
-        }
-        Intent i = new Intent(this, DeviceInfoActivity.class);
+        Intent i = new Intent(this, DeviceInfoProActivity.class);
         i.putExtra(AppConstants.EXTRA_KEY_DEVICE, mMokoDevice);
         startActivity(i);
     }

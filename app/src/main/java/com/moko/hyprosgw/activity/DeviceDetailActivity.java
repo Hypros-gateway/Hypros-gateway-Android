@@ -6,6 +6,8 @@ import android.os.Looper;
 import android.text.TextUtils;
 import android.view.View;
 
+import androidx.recyclerview.widget.LinearLayoutManager;
+
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -39,8 +41,6 @@ import org.greenrobot.eventbus.ThreadMode;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
-
-import androidx.recyclerview.widget.LinearLayoutManager;
 
 public class DeviceDetailActivity extends BaseActivity<ActivityDetailBinding> {
 
@@ -172,8 +172,7 @@ public class DeviceDetailActivity extends BaseActivity<ActivityDetailBinding> {
     }
 
     public void onDeviceSetting(View view) {
-        if (isWindowLocked())
-            return;
+        if (isWindowLocked()) return;
         Intent intent = new Intent(this, DeviceSettingActivity.class);
         intent.putExtra(AppConstants.EXTRA_KEY_DEVICE, mMokoDevice);
         startActivity(intent);
@@ -191,14 +190,6 @@ public class DeviceDetailActivity extends BaseActivity<ActivityDetailBinding> {
             ToastUtils.showToast(this, R.string.device_offline);
             return;
         }
-        if ((mMokoDevice.deviceType & 0x0F) > 1) {
-            // MK107 Pro
-            Intent i = new Intent(this, ScannerUploadOptionProActivity.class);
-            i.putExtra(AppConstants.EXTRA_KEY_DEVICE, mMokoDevice);
-            startActivity(i);
-            return;
-        }
-        // MK107
         Intent i = new Intent(this, ScannerUploadOptionActivity.class);
         i.putExtra(AppConstants.EXTRA_KEY_DEVICE, mMokoDevice);
         startActivity(i);

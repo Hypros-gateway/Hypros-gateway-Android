@@ -1,6 +1,5 @@
 package com.moko.hyprosgw.activity;
 
-
 import android.content.Intent;
 import android.os.Handler;
 import android.os.Looper;
@@ -8,6 +7,9 @@ import android.text.InputFilter;
 import android.text.TextUtils;
 import android.view.View;
 import android.widget.RadioGroup;
+
+import androidx.fragment.app.Fragment;
+import androidx.viewpager2.widget.ViewPager2;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
@@ -46,26 +48,18 @@ import org.greenrobot.eventbus.ThreadMode;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 
-import androidx.fragment.app.Fragment;
-import androidx.viewpager2.widget.ViewPager2;
-
 public class ModifyMQTTSettingsActivity extends BaseActivity<ActivityMqttDeviceModifyBinding> implements RadioGroup.OnCheckedChangeListener {
     public static String TAG = ModifyMQTTSettingsActivity.class.getSimpleName();
     private final String FILTER_ASCII = "[ -~]*";
 
-
     private GeneralDeviceFragment generalFragment;
     private UserDeviceFragment userFragment;
     private SSLDevicePathFragment sslFragment;
-    private MQTTFragmentAdapter adapter;
     private ArrayList<Fragment> fragments;
     private MokoDevice mMokoDevice;
     private MQTTConfig appMqttConfig;
     private MQTTSettings mMQTTSettings;
-
     public Handler mHandler;
-
-    private InputFilter filter;
 
     @Override
     protected void onCreate() {
@@ -74,11 +68,10 @@ public class ModifyMQTTSettingsActivity extends BaseActivity<ActivityMqttDeviceM
         appMqttConfig = new Gson().fromJson(mqttConfigAppStr, MQTTConfig.class);
         mMQTTSettings = new MQTTSettings();
         mMokoDevice = (MokoDevice) getIntent().getSerializableExtra(AppConstants.EXTRA_KEY_DEVICE);
-        filter = (source, start, end, dest, dstart, dend) -> {
+        InputFilter filter = (source, start, end, dest, dstart, dend) -> {
             if (!(source + "").matches(FILTER_ASCII)) {
                 return "";
             }
-
             return null;
         };
         mBind.etMqttHost.setFilters(new InputFilter[]{new InputFilter.LengthFilter(64), filter});
@@ -89,7 +82,7 @@ public class ModifyMQTTSettingsActivity extends BaseActivity<ActivityMqttDeviceM
         mBind.etPassword.setFilters(new InputFilter[]{new InputFilter.LengthFilter(64), filter});
         createFragment();
         initData();
-        adapter = new MQTTFragmentAdapter(this);
+        MQTTFragmentAdapter adapter = new MQTTFragmentAdapter(this);
         adapter.setFragmentList(fragments);
         mBind.vpMqtt.setAdapter(adapter);
         mBind.vpMqtt.registerOnPageChangeCallback(new ViewPager2.OnPageChangeCallback() {

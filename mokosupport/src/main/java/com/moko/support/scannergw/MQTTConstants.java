@@ -42,6 +42,9 @@ public class MQTTConstants {
     public static final int CONFIG_MSG_ID_OTA_MASTER = 1043;
     public static final int CONFIG_MSG_ID_OTA_ONE_WAY = 1044;
     public static final int CONFIG_MSG_ID_OTA_BOTH_WAY = 1045;
+    public static final int CONFIG_MSG_ID_BEACON_ADV_PARAMS = 1046;
+    public static final int CONFIG_MSG_ID_BEACON_ENABLE = 1047;
+
     // READ
     public static final int READ_MSG_ID_BLE_PASSWORD = 2000;
     public static final int READ_MSG_ID_DEVICE_INFO = 2003;
@@ -77,6 +80,8 @@ public class MQTTConstants {
     public static final int READ_MSG_ID_FILTER_MKIBEACON = 2035;
     public static final int READ_MSG_ID_FILTER_MKIBEACON_ACC = 2036;
     public static final int READ_MSG_ID_FILTER_OTHER = 2039;
+    public static final int READ_MSG_ID_BEACON_ADV_PARAMS = 2046;
+    public static final int READ_MSG_ID_BEACON_ENABLE = 2047;
     // NOTIFY
     public static final int NOTIFY_MSG_ID_OTA_RESULT = 3001;
     public static final int NOTIFY_MSG_ID_RESET_RESULT = 3002;

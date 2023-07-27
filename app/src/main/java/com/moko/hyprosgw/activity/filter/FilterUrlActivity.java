@@ -1,8 +1,9 @@
-package com.moko.hyprosgw.activity;
+package com.moko.hyprosgw.activity.filter;
 
 
 import android.os.Handler;
 import android.os.Looper;
+import android.text.InputFilter;
 import android.text.TextUtils;
 import android.view.View;
 
@@ -12,14 +13,14 @@ import com.google.gson.JsonObject;
 import com.google.gson.reflect.TypeToken;
 import com.moko.hyprosgw.AppConstants;
 import com.moko.hyprosgw.base.BaseActivity;
-import com.moko.hyprosgw.databinding.ActivityFilterMkibeaconAccBinding;
+import com.moko.hyprosgw.databinding.ActivityFilterUrlBinding;
 import com.moko.hyprosgw.entity.MQTTConfig;
 import com.moko.hyprosgw.entity.MokoDevice;
 import com.moko.hyprosgw.utils.SPUtiles;
 import com.moko.hyprosgw.utils.ToastUtils;
 import com.moko.support.scannergw.MQTTConstants;
 import com.moko.support.scannergw.MQTTSupport;
-import com.moko.support.scannergw.entity.FilterIBeacon;
+import com.moko.support.scannergw.entity.FilterUrl;
 import com.moko.support.scannergw.entity.MsgConfigResult;
 import com.moko.support.scannergw.entity.MsgDeviceInfo;
 import com.moko.support.scannergw.entity.MsgReadResult;
@@ -33,8 +34,8 @@ import org.greenrobot.eventbus.ThreadMode;
 
 import java.lang.reflect.Type;
 
-public class FilterMKIBeaconAccActivity extends BaseActivity<ActivityFilterMkibeaconAccBinding> {
-
+public class FilterUrlActivity extends BaseActivity<ActivityFilterUrlBinding> {
+    private final String FILTER_ASCII = "[ -~]*";
 
     private MokoDevice mMokoDevice;
     private MQTTConfig appMqttConfig;
@@ -43,6 +44,7 @@ public class FilterMKIBeaconAccActivity extends BaseActivity<ActivityFilterMkibe
 
     @Override
     protected void onCreate() {
+
         String mqttConfigAppStr = SPUtiles.getStringValue(this, AppConstants.SP_KEY_MQTT_CONFIG_APP, "");
         appMqttConfig = new Gson().fromJson(mqttConfigAppStr, MQTTConfig.class);
         mMokoDevice = (MokoDevice) getIntent().getSerializableExtra(AppConstants.EXTRA_KEY_DEVICE);
@@ -52,12 +54,20 @@ public class FilterMKIBeaconAccActivity extends BaseActivity<ActivityFilterMkibe
             dismissLoadingProgressDialog();
             finish();
         }, 30 * 1000);
-        getFilterMKIBeaconAcc();
+        InputFilter inputFilter = (source, start, end, dest, dstart, dend) -> {
+            if (!(source + "").matches(FILTER_ASCII)) {
+                return "";
+            }
+
+            return null;
+        };
+        mBind.etUrl.setFilters(new InputFilter[]{new InputFilter.LengthFilter(255), inputFilter});
+        getFilterUrl();
     }
 
     @Override
-    protected ActivityFilterMkibeaconAccBinding getViewBinding() {
-        return ActivityFilterMkibeaconAccBinding.inflate(getLayoutInflater());
+    protected ActivityFilterUrlBinding getViewBinding() {
+        return ActivityFilterUrlBinding.inflate(getLayoutInflater());
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
@@ -76,23 +86,19 @@ public class FilterMKIBeaconAccActivity extends BaseActivity<ActivityFilterMkibe
             e.printStackTrace();
             return;
         }
-        if (msg_id == MQTTConstants.READ_MSG_ID_FILTER_MKIBEACON_ACC) {
-            Type type = new TypeToken<MsgReadResult<FilterIBeacon>>() {
+        if (msg_id == MQTTConstants.READ_MSG_ID_FILTER_URL) {
+            Type type = new TypeToken<MsgReadResult<FilterUrl>>() {
             }.getType();
-            MsgReadResult<FilterIBeacon> result = new Gson().fromJson(message, type);
+            MsgReadResult<FilterUrl> result = new Gson().fromJson(message, type);
             if (!mMokoDevice.deviceId.equals(result.device_info.device_id)) {
                 return;
             }
             dismissLoadingProgressDialog();
             mHandler.removeMessages(0);
-            mBind.cbIbeacon.setChecked(result.data.onOff == 1);
-            mBind.etIbeaconUuid.setText(result.data.uuid);
-            mBind.etIbeaconMajorMin.setText(String.valueOf(result.data.min_major));
-            mBind.etIbeaconMajorMax.setText(String.valueOf(result.data.max_major));
-            mBind.etIbeaconMinorMin.setText(String.valueOf(result.data.min_minor));
-            mBind.etIbeaconMinorMax.setText(String.valueOf(result.data.max_minor));
+            mBind.cbUrl.setChecked(result.data.onOff == 1);
+            mBind.etUrl.setText(result.data.url);
         }
-        if (msg_id == MQTTConstants.CONFIG_MSG_ID_FILTER_MKIBEACON_ACC) {
+        if (msg_id == MQTTConstants.CONFIG_MSG_ID_FILTER_URL) {
             Type type = new TypeToken<MsgConfigResult>() {
             }.getType();
             MsgConfigResult result = new Gson().fromJson(message, type);
@@ -125,7 +131,7 @@ public class FilterMKIBeaconAccActivity extends BaseActivity<ActivityFilterMkibe
         finish();
     }
 
-    private void getFilterMKIBeaconAcc() {
+    private void getFilterUrl() {
         String appTopic;
         if (TextUtils.isEmpty(appMqttConfig.topicPublish)) {
             appTopic = mMokoDevice.topicSubscribe;
@@ -135,9 +141,9 @@ public class FilterMKIBeaconAccActivity extends BaseActivity<ActivityFilterMkibe
         MsgDeviceInfo deviceInfo = new MsgDeviceInfo();
         deviceInfo.device_id = mMokoDevice.deviceId;
         deviceInfo.mac = mMokoDevice.mac;
-        String message = MQTTMessageAssembler.assembleReadFilterMKIBeaconAcc(deviceInfo);
+        String message = MQTTMessageAssembler.assembleReadFilterUrl(deviceInfo);
         try {
-            MQTTSupport.getInstance().publish(appTopic, message, MQTTConstants.READ_MSG_ID_FILTER_MKIBEACON_ACC, appMqttConfig.qos);
+            MQTTSupport.getInstance().publish(appTopic, message, MQTTConstants.READ_MSG_ID_FILTER_URL, appMqttConfig.qos);
         } catch (MqttException e) {
             e.printStackTrace();
         }
@@ -150,14 +156,12 @@ public class FilterMKIBeaconAccActivity extends BaseActivity<ActivityFilterMkibe
     public void onSave(View view) {
         if (isWindowLocked())
             return;
-        if (isValid()) {
-            mHandler.postDelayed(() -> {
-                dismissLoadingProgressDialog();
-                ToastUtils.showToast(this, "Set up failed");
-            }, 30 * 1000);
-            showLoadingProgressDialog();
-            saveParams();
-        }
+        mHandler.postDelayed(() -> {
+            dismissLoadingProgressDialog();
+            ToastUtils.showToast(this, "Set up failed");
+        }, 30 * 1000);
+        showLoadingProgressDialog();
+        saveParams();
     }
 
 
@@ -172,70 +176,15 @@ public class FilterMKIBeaconAccActivity extends BaseActivity<ActivityFilterMkibe
         deviceInfo.device_id = mMokoDevice.deviceId;
         deviceInfo.mac = mMokoDevice.mac;
 
-        FilterIBeacon filterIBeacon = new FilterIBeacon();
-        filterIBeacon.onOff = mBind.cbIbeacon.isChecked() ? 1 : 0;
-        filterIBeacon.min_major = Integer.parseInt(mBind.etIbeaconMajorMin.getText().toString());
-        filterIBeacon.max_major = Integer.parseInt(mBind.etIbeaconMajorMax.getText().toString());
-        filterIBeacon.min_minor = Integer.parseInt(mBind.etIbeaconMinorMin.getText().toString());
-        filterIBeacon.max_minor = Integer.parseInt(mBind.etIbeaconMinorMax.getText().toString());
-        filterIBeacon.uuid = mBind.etIbeaconUuid.getText().toString();
+        FilterUrl filterUrl = new FilterUrl();
+        filterUrl.onOff = mBind.cbUrl.isChecked() ? 1 : 0;
+        filterUrl.url = mBind.etUrl.getText().toString();
 
-        String message = MQTTMessageAssembler.assembleWriteFilterMKIBeaconAcc(deviceInfo, filterIBeacon);
+        String message = MQTTMessageAssembler.assembleWriteFilterUrl(deviceInfo, filterUrl);
         try {
-            MQTTSupport.getInstance().publish(appTopic, message, MQTTConstants.CONFIG_MSG_ID_FILTER_MKIBEACON_ACC, appMqttConfig.qos);
+            MQTTSupport.getInstance().publish(appTopic, message, MQTTConstants.CONFIG_MSG_ID_FILTER_URL, appMqttConfig.qos);
         } catch (MqttException e) {
             e.printStackTrace();
         }
-    }
-
-    private boolean isValid() {
-        final String uuid = mBind.etIbeaconUuid.getText().toString();
-        final String majorMin = mBind.etIbeaconMajorMin.getText().toString();
-        final String majorMax = mBind.etIbeaconMajorMax.getText().toString();
-        final String minorMin = mBind.etIbeaconMinorMin.getText().toString();
-        final String minorMax = mBind.etIbeaconMinorMax.getText().toString();
-        if (!TextUtils.isEmpty(uuid)) {
-            int length = uuid.length();
-            if (length % 2 != 0) {
-                ToastUtils.showToast(this, "Para Error");
-                return false;
-            }
-        }
-        if (!TextUtils.isEmpty(majorMin) && !TextUtils.isEmpty(majorMax)) {
-            if (Integer.parseInt(majorMin) > 65535) {
-                ToastUtils.showToast(this, "Para Error");
-                return false;
-            }
-            if (Integer.parseInt(majorMax) > 65535) {
-                ToastUtils.showToast(this, "Para Error");
-                return false;
-            }
-            if (Integer.parseInt(majorMax) < Integer.parseInt(majorMin)) {
-                ToastUtils.showToast(this, "Para Error");
-                return false;
-            }
-        } else if (TextUtils.isEmpty(majorMin) || TextUtils.isEmpty(majorMax)) {
-            ToastUtils.showToast(this, "Para Error");
-            return false;
-        }
-
-        if (!TextUtils.isEmpty(minorMin) && !TextUtils.isEmpty(minorMax)) {
-            if (Integer.parseInt(minorMin) > 65535) {
-                ToastUtils.showToast(this, "Para Error");
-                return false;
-            }
-            if (Integer.parseInt(minorMax) > 65535) {
-                ToastUtils.showToast(this, "Para Error");
-                return false;
-            }
-            if (Integer.parseInt(minorMax) < Integer.parseInt(minorMin)) {
-                ToastUtils.showToast(this, "Para Error");
-                return false;
-            }
-        } else if (TextUtils.isEmpty(minorMin) || TextUtils.isEmpty(minorMax)) {
-            ToastUtils.showToast(this, "Para Error");
-            return false;
-        }
-        return true;
     }
 }

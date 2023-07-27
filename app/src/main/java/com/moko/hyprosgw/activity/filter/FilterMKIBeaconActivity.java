@@ -1,5 +1,4 @@
-package com.moko.hyprosgw.activity;
-
+package com.moko.hyprosgw.activity.filter;
 
 import android.os.Bundle;
 import android.os.Handler;
@@ -35,10 +34,8 @@ import org.greenrobot.eventbus.ThreadMode;
 import java.lang.reflect.Type;
 
 public class FilterMKIBeaconActivity extends BaseActivity<ActivityFilterMkibeaconBinding> {
-
     private MokoDevice mMokoDevice;
     private MQTTConfig appMqttConfig;
-
     public Handler mHandler;
 
     @Override

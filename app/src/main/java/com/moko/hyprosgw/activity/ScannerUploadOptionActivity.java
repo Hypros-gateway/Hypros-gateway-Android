@@ -5,7 +5,9 @@ import android.os.Handler;
 import android.os.Looper;
 import android.text.TextUtils;
 import android.view.View;
-import android.widget.CompoundButton;
+import android.widget.SeekBar;
+
+import androidx.annotation.Nullable;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
@@ -13,6 +15,10 @@ import com.google.gson.JsonObject;
 import com.google.gson.reflect.TypeToken;
 import com.moko.hyprosgw.AppConstants;
 import com.moko.hyprosgw.R;
+import com.moko.hyprosgw.activity.filter.DuplicateDataFilterActivity;
+import com.moko.hyprosgw.activity.filter.FilterAdvNameActivity;
+import com.moko.hyprosgw.activity.filter.FilterMacAddressActivity;
+import com.moko.hyprosgw.activity.filter.FilterRawDataSwitchActivity;
 import com.moko.hyprosgw.base.BaseActivity;
 import com.moko.hyprosgw.databinding.ActivityScannerUploadOptionBinding;
 import com.moko.hyprosgw.dialog.BottomDialog;
@@ -22,8 +28,9 @@ import com.moko.hyprosgw.utils.SPUtiles;
 import com.moko.hyprosgw.utils.ToastUtils;
 import com.moko.support.scannergw.MQTTConstants;
 import com.moko.support.scannergw.MQTTSupport;
-import com.moko.support.scannergw.entity.FilterRelation;
-import com.moko.support.scannergw.entity.FilterRelationWrite;
+import com.moko.support.scannergw.entity.FilterPHY;
+import com.moko.support.scannergw.entity.FilterRSSI;
+import com.moko.support.scannergw.entity.FilterRelationship;
 import com.moko.support.scannergw.entity.MsgConfigResult;
 import com.moko.support.scannergw.entity.MsgDeviceInfo;
 import com.moko.support.scannergw.entity.MsgReadResult;
@@ -38,19 +45,14 @@ import org.greenrobot.eventbus.ThreadMode;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 
-import androidx.annotation.Nullable;
-
-public class ScannerUploadOptionActivity extends BaseActivity<ActivityScannerUploadOptionBinding> {
-
+public class ScannerUploadOptionActivity extends BaseActivity<ActivityScannerUploadOptionBinding> implements SeekBar.OnSeekBarChangeListener {
     private MokoDevice mMokoDevice;
     private MQTTConfig appMqttConfig;
-
     public Handler mHandler;
-
-    private boolean isFilterAEnable;
-    private boolean isFilterBEnable;
-    private ArrayList<String> mValues;
-    private int mSelected;
+    private ArrayList<String> mPHYValues;
+    private int mPHYSelected;
+    private ArrayList<String> mRelationshipValues;
+    private int mRelationshipSelected;
 
     @Override
     protected void onCreate() {
@@ -58,22 +60,27 @@ public class ScannerUploadOptionActivity extends BaseActivity<ActivityScannerUpl
         appMqttConfig = new Gson().fromJson(mqttConfigAppStr, MQTTConfig.class);
         mMokoDevice = (MokoDevice) getIntent().getSerializableExtra(AppConstants.EXTRA_KEY_DEVICE);
         mBind.tvName.setText(mMokoDevice.nickName);
-        mBind.cbFilterSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-            @Override
-            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                mBind.clFilter.setVisibility(isChecked ? View.VISIBLE : View.GONE);
-            }
-        });
+        mBind.sbRssiFilter.setOnSeekBarChangeListener(this);
         mHandler = new Handler(Looper.getMainLooper());
-        mValues = new ArrayList<>();
-        mValues.add("Or");
-        mValues.add("And");
+        mPHYValues = new ArrayList<>();
+        mPHYValues.add("1M PHY(V4.2)");
+        mPHYValues.add("1M PHY(V5.0)");
+        mPHYValues.add("1M PHY(V4.2) & 1M PHY(V5.0)");
+        mPHYValues.add("Coded PHY(V5.0)");
+        mRelationshipValues = new ArrayList<>();
+        mRelationshipValues.add("Null");
+        mRelationshipValues.add("Only MAC");
+        mRelationshipValues.add("Only ADV Name");
+        mRelationshipValues.add("Only RAW DATA");
+        mRelationshipValues.add("ADV name&Raw data");
+        mRelationshipValues.add("MAC&ADV name&Raw data");
+        mRelationshipValues.add("ADV name | Raw data");
         showLoadingProgressDialog();
         mHandler.postDelayed(() -> {
             dismissLoadingProgressDialog();
             finish();
         }, 30 * 1000);
-        getFilterRelation();
+        getFilterRSSI();
     }
 
     @Override
@@ -97,29 +104,66 @@ public class ScannerUploadOptionActivity extends BaseActivity<ActivityScannerUpl
             e.printStackTrace();
             return;
         }
-        if (msg_id == MQTTConstants.READ_MSG_ID_FILTER_RELATION) {
-            Type type = new TypeToken<MsgReadResult<FilterRelation>>() {
+        if (msg_id == MQTTConstants.READ_MSG_ID_FILTER_RSSI) {
+            Type type = new TypeToken<MsgReadResult<FilterRSSI>>() {
             }.getType();
-            MsgReadResult<FilterRelation> result = new Gson().fromJson(message, type);
+            MsgReadResult<FilterRSSI> result = new Gson().fromJson(message, type);
             if (!mMokoDevice.deviceId.equals(result.device_info.device_id)) {
                 return;
             }
+            final int rssi = result.data.rssi;
+            int progress = rssi + 127;
+            mBind.sbRssiFilter.setProgress(progress);
+            mBind.tvRssiFilterValue.setText(String.format("%ddBm", rssi));
+            mBind.tvRssiFilterTips.setText(getString(R.string.rssi_filter, rssi));
+            getFilterPHY();
+        }
+        if (msg_id == MQTTConstants.READ_MSG_ID_FILTER_PHY) {
+            Type type = new TypeToken<MsgReadResult<FilterPHY>>() {
+            }.getType();
+            MsgReadResult<FilterPHY> result = new Gson().fromJson(message, type);
+            if (!mMokoDevice.deviceId.equals(result.device_info.device_id)) {
+                return;
+            }
+            final int phy = result.data.phy;
+            mPHYSelected = phy;
+            mBind.tvFilterByPhy.setText(mPHYValues.get(phy));
+            getFilterRelationship();
+        }
+        if (msg_id == MQTTConstants.READ_MSG_ID_FILTER_RELATIONSHIP) {
+            Type type = new TypeToken<MsgReadResult<FilterRelationship>>() {
+            }.getType();
+            MsgReadResult<FilterRelationship> result = new Gson().fromJson(message, type);
+            if (!mMokoDevice.deviceId.equals(result.device_info.device_id)) {
+                return;
+            }
+            final int rule = result.data.rule;
+            mRelationshipSelected = rule;
+            mBind.tvFilterRelationship.setText(mRelationshipValues.get(rule));
             dismissLoadingProgressDialog();
             mHandler.removeMessages(0);
-            String relation = result.data.relation;
-            mSelected = "AND".equals(relation) ? 1 : 0;
-            mBind.tvRelation.setText(mValues.get(mSelected));
-            mBind.tvConditionA.setText(result.data.rule1_switch == 0 ? "OFF" : "ON");
-            isFilterAEnable = result.data.rule1_switch == 1;
-            mBind.tvConditionB.setText(result.data.rule2_switch == 0 ? "OFF" : "ON");
-            isFilterBEnable = result.data.rule2_switch == 1;
-            if (isFilterAEnable && isFilterBEnable) {
-                mBind.tvRelation.setEnabled(true);
-            } else {
-                mBind.tvRelation.setEnabled(false);
-            }
         }
-        if (msg_id == MQTTConstants.CONFIG_MSG_ID_FILTER_RELATION) {
+        if (msg_id == MQTTConstants.CONFIG_MSG_ID_FILTER_RSSI) {
+            Type type = new TypeToken<MsgConfigResult>() {
+            }.getType();
+            MsgConfigResult result = new Gson().fromJson(message, type);
+            if (!mMokoDevice.deviceId.equals(result.device_info.device_id)) {
+                return;
+            }
+            if (result.result_code != 0) return;
+            setFilterPHY();
+        }
+        if (msg_id == MQTTConstants.CONFIG_MSG_ID_FILTER_PHY) {
+            Type type = new TypeToken<MsgConfigResult>() {
+            }.getType();
+            MsgConfigResult result = new Gson().fromJson(message, type);
+            if (!mMokoDevice.deviceId.equals(result.device_info.device_id)) {
+                return;
+            }
+            if (result.result_code != 0) return;
+            setFilterRelationship();
+        }
+        if (msg_id == MQTTConstants.CONFIG_MSG_ID_FILTER_RELATIONSHIP) {
             Type type = new TypeToken<MsgConfigResult>() {
             }.getType();
             MsgConfigResult result = new Gson().fromJson(message, type);
@@ -152,7 +196,7 @@ public class ScannerUploadOptionActivity extends BaseActivity<ActivityScannerUpl
         finish();
     }
 
-    private void setFilterRelation() {
+    private void getFilterRSSI() {
         String appTopic;
         if (TextUtils.isEmpty(appMqttConfig.topicPublish)) {
             appTopic = mMokoDevice.topicSubscribe;
@@ -162,17 +206,15 @@ public class ScannerUploadOptionActivity extends BaseActivity<ActivityScannerUpl
         MsgDeviceInfo deviceInfo = new MsgDeviceInfo();
         deviceInfo.device_id = mMokoDevice.deviceId;
         deviceInfo.mac = mMokoDevice.mac;
-        FilterRelationWrite relation = new FilterRelationWrite();
-        relation.relation = mSelected == 0 ? "OR" : "AND";
-        String message = MQTTMessageAssembler.assembleWriteFilterRelation(deviceInfo, relation);
+        String message = MQTTMessageAssembler.assembleReadFilterRSSI(deviceInfo);
         try {
-            MQTTSupport.getInstance().publish(appTopic, message, MQTTConstants.CONFIG_MSG_ID_FILTER_RELATION, appMqttConfig.qos);
+            MQTTSupport.getInstance().publish(appTopic, message, MQTTConstants.READ_MSG_ID_FILTER_RSSI, appMqttConfig.qos);
         } catch (MqttException e) {
             e.printStackTrace();
         }
     }
 
-    private void getFilterRelation() {
+    private void setFilterRSSI() {
         String appTopic;
         if (TextUtils.isEmpty(appMqttConfig.topicPublish)) {
             appTopic = mMokoDevice.topicSubscribe;
@@ -182,79 +224,117 @@ public class ScannerUploadOptionActivity extends BaseActivity<ActivityScannerUpl
         MsgDeviceInfo deviceInfo = new MsgDeviceInfo();
         deviceInfo.device_id = mMokoDevice.deviceId;
         deviceInfo.mac = mMokoDevice.mac;
-        String message = MQTTMessageAssembler.assembleReadFilterRelation(deviceInfo);
+        FilterRSSI filterRSSI = new FilterRSSI();
+        filterRSSI.rssi = mBind.sbRssiFilter.getProgress() - 127;
+        String message = MQTTMessageAssembler.assembleWriteFilterRSSI(deviceInfo, filterRSSI);
         try {
-            MQTTSupport.getInstance().publish(appTopic, message, MQTTConstants.READ_MSG_ID_FILTER_RELATION, appMqttConfig.qos);
+            MQTTSupport.getInstance().publish(appTopic, message, MQTTConstants.CONFIG_MSG_ID_FILTER_RSSI, appMqttConfig.qos);
         } catch (MqttException e) {
             e.printStackTrace();
         }
     }
 
-    public void onBeaconTypeFilter(View view) {
-        if (isWindowLocked())
-            return;
-        if (!MQTTSupport.getInstance().isConnected()) {
-            ToastUtils.showToast(this, R.string.network_error);
-            return;
+    private void getFilterPHY() {
+        String appTopic;
+        if (TextUtils.isEmpty(appMqttConfig.topicPublish)) {
+            appTopic = mMokoDevice.topicSubscribe;
+        } else {
+            appTopic = appMqttConfig.topicPublish;
         }
-        if (!mMokoDevice.isOnline) {
-            ToastUtils.showToast(this, R.string.device_offline);
-            return;
+        MsgDeviceInfo deviceInfo = new MsgDeviceInfo();
+        deviceInfo.device_id = mMokoDevice.deviceId;
+        deviceInfo.mac = mMokoDevice.mac;
+        String message = MQTTMessageAssembler.assembleReadFilterPHY(deviceInfo);
+        try {
+            MQTTSupport.getInstance().publish(appTopic, message, MQTTConstants.READ_MSG_ID_FILTER_PHY, appMqttConfig.qos);
+        } catch (MqttException e) {
+            e.printStackTrace();
         }
-        Intent i = new Intent(this, BeaconTypeFilterActivity.class);
-        i.putExtra(AppConstants.EXTRA_KEY_DEVICE, mMokoDevice);
-        startActivity(i);
     }
 
-    public void onFilterA(View view) {
-        if (isWindowLocked())
-            return;
-        if (!MQTTSupport.getInstance().isConnected()) {
-            ToastUtils.showToast(this, R.string.network_error);
-            return;
+    private void setFilterPHY() {
+        String appTopic;
+        if (TextUtils.isEmpty(appMqttConfig.topicPublish)) {
+            appTopic = mMokoDevice.topicSubscribe;
+        } else {
+            appTopic = appMqttConfig.topicPublish;
         }
-        if (!mMokoDevice.isOnline) {
-            ToastUtils.showToast(this, R.string.device_offline);
-            return;
+        MsgDeviceInfo deviceInfo = new MsgDeviceInfo();
+        deviceInfo.device_id = mMokoDevice.deviceId;
+        deviceInfo.mac = mMokoDevice.mac;
+        FilterPHY filterPHY = new FilterPHY();
+        filterPHY.phy = mPHYSelected;
+        String message = MQTTMessageAssembler.assembleWriteFilterPHY(deviceInfo, filterPHY);
+        try {
+            MQTTSupport.getInstance().publish(appTopic, message, MQTTConstants.CONFIG_MSG_ID_FILTER_PHY, appMqttConfig.qos);
+        } catch (MqttException e) {
+            e.printStackTrace();
         }
-        Intent i = new Intent(this, FilterOptionsAActivity.class);
-        i.putExtra(AppConstants.EXTRA_KEY_DEVICE, mMokoDevice);
-        startActivityForResult(i, AppConstants.REQUEST_CODE_FILTER_CONDITION);
     }
 
-    public void onFilterB(View view) {
-        if (isWindowLocked())
-            return;
-        if (!MQTTSupport.getInstance().isConnected()) {
-            ToastUtils.showToast(this, R.string.network_error);
-            return;
+    private void getFilterRelationship() {
+        String appTopic;
+        if (TextUtils.isEmpty(appMqttConfig.topicPublish)) {
+            appTopic = mMokoDevice.topicSubscribe;
+        } else {
+            appTopic = appMqttConfig.topicPublish;
         }
-        if (!mMokoDevice.isOnline) {
-            ToastUtils.showToast(this, R.string.device_offline);
-            return;
+        MsgDeviceInfo deviceInfo = new MsgDeviceInfo();
+        deviceInfo.device_id = mMokoDevice.deviceId;
+        deviceInfo.mac = mMokoDevice.mac;
+        String message = MQTTMessageAssembler.assembleReadFilterRelationship(deviceInfo);
+        try {
+            MQTTSupport.getInstance().publish(appTopic, message, MQTTConstants.READ_MSG_ID_FILTER_RELATIONSHIP, appMqttConfig.qos);
+        } catch (MqttException e) {
+            e.printStackTrace();
         }
-        Intent i = new Intent(this, FilterOptionsBActivity.class);
-        i.putExtra(AppConstants.EXTRA_KEY_DEVICE, mMokoDevice);
-        startActivityForResult(i, AppConstants.REQUEST_CODE_FILTER_CONDITION);
     }
 
-    public void onRelation(View view) {
+    private void setFilterRelationship() {
+        String appTopic;
+        if (TextUtils.isEmpty(appMqttConfig.topicPublish)) {
+            appTopic = mMokoDevice.topicSubscribe;
+        } else {
+            appTopic = appMqttConfig.topicPublish;
+        }
+        MsgDeviceInfo deviceInfo = new MsgDeviceInfo();
+        deviceInfo.device_id = mMokoDevice.deviceId;
+        deviceInfo.mac = mMokoDevice.mac;
+        FilterRelationship relationship = new FilterRelationship();
+        relationship.rule = mRelationshipSelected;
+        String message = MQTTMessageAssembler.assembleWriteFilterRelationship(deviceInfo, relationship);
+        try {
+            MQTTSupport.getInstance().publish(appTopic, message, MQTTConstants.CONFIG_MSG_ID_FILTER_RELATIONSHIP, appMqttConfig.qos);
+        } catch (MqttException e) {
+            e.printStackTrace();
+        }
+    }
+
+
+    public void onFilterByPHY(View view) {
         if (isWindowLocked())
             return;
         BottomDialog dialog = new BottomDialog();
-        dialog.setDatas(mValues, mSelected);
+        dialog.setDatas(mPHYValues, mPHYSelected);
         dialog.setListener(value -> {
-            mBind.tvRelation.setText(value == 1 ? "And" : "Or");
-            mSelected = value;
-            mHandler.postDelayed(() -> {
-                dismissLoadingProgressDialog();
-                ToastUtils.showToast(this, "Set up failed");
-            }, 30 * 1000);
-            showLoadingProgressDialog();
-            setFilterRelation();
+            mPHYSelected = value;
+            mBind.tvFilterByPhy.setText(mPHYValues.get(value));
         });
         dialog.show(getSupportFragmentManager());
     }
+
+    public void onFilterRelationship(View view) {
+        if (isWindowLocked())
+            return;
+        BottomDialog dialog = new BottomDialog();
+        dialog.setDatas(mRelationshipValues, mRelationshipSelected);
+        dialog.setListener(value -> {
+            mRelationshipSelected = value;
+            mBind.tvFilterRelationship.setText(mRelationshipValues.get(value));
+        });
+        dialog.show(getSupportFragmentManager());
+    }
+
 
     public void onDuplicateDataFilter(View view) {
         if (isWindowLocked())
@@ -288,6 +368,65 @@ public class ScannerUploadOptionActivity extends BaseActivity<ActivityScannerUpl
         startActivity(i);
     }
 
+    public void onFilterByMac(View view) {
+        if (isWindowLocked())
+            return;
+        if (!MQTTSupport.getInstance().isConnected()) {
+            ToastUtils.showToast(this, R.string.network_error);
+            return;
+        }
+        if (!mMokoDevice.isOnline) {
+            ToastUtils.showToast(this, R.string.device_offline);
+            return;
+        }
+        Intent i = new Intent(this, FilterMacAddressActivity.class);
+        i.putExtra(AppConstants.EXTRA_KEY_DEVICE, mMokoDevice);
+        startActivity(i);
+    }
+
+    public void onFilterByName(View view) {
+        if (isWindowLocked())
+            return;
+        if (!MQTTSupport.getInstance().isConnected()) {
+            ToastUtils.showToast(this, R.string.network_error);
+            return;
+        }
+        if (!mMokoDevice.isOnline) {
+            ToastUtils.showToast(this, R.string.device_offline);
+            return;
+        }
+        Intent i = new Intent(this, FilterAdvNameActivity.class);
+        i.putExtra(AppConstants.EXTRA_KEY_DEVICE, mMokoDevice);
+        startActivity(i);
+    }
+
+    public void onFilterByRawData(View view) {
+        if (isWindowLocked())
+            return;
+        if (!MQTTSupport.getInstance().isConnected()) {
+            ToastUtils.showToast(this, R.string.network_error);
+            return;
+        }
+        if (!mMokoDevice.isOnline) {
+            ToastUtils.showToast(this, R.string.device_offline);
+            return;
+        }
+        Intent i = new Intent(this, FilterRawDataSwitchActivity.class);
+        i.putExtra(AppConstants.EXTRA_KEY_DEVICE, mMokoDevice);
+        startActivity(i);
+    }
+
+    public void onSave(View view) {
+        if (isWindowLocked())
+            return;
+        mHandler.postDelayed(() -> {
+            dismissLoadingProgressDialog();
+            ToastUtils.showToast(this, "Set up failed");
+        }, 30 * 1000);
+        showLoadingProgressDialog();
+        setFilterRSSI();
+    }
+
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
@@ -297,7 +436,24 @@ public class ScannerUploadOptionActivity extends BaseActivity<ActivityScannerUpl
                 dismissLoadingProgressDialog();
                 finish();
             }, 30 * 1000);
-            getFilterRelation();
+            getFilterRSSI();
         }
+    }
+
+    @Override
+    public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+        int rssi = progress - 127;
+        mBind.tvRssiFilterValue.setText(String.format("%ddBm", rssi));
+        mBind.tvRssiFilterTips.setText(getString(R.string.rssi_filter, rssi));
+    }
+
+    @Override
+    public void onStartTrackingTouch(SeekBar seekBar) {
+
+    }
+
+    @Override
+    public void onStopTrackingTouch(SeekBar seekBar) {
+
     }
 }

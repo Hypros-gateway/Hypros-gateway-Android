@@ -1,4 +1,4 @@
-package com.moko.hyprosgw.activity;
+package com.moko.hyprosgw.activity.filter;
 
 
 import android.content.Intent;
@@ -39,12 +39,9 @@ import java.lang.reflect.Type;
 import androidx.annotation.Nullable;
 
 public class FilterRawDataSwitchActivity extends BaseActivity<ActivityFilterRawDataSwitchBinding> {
-
     private MokoDevice mMokoDevice;
     private MQTTConfig appMqttConfig;
-
     public Handler mHandler;
-
     private boolean isBXPAccOpen;
     private boolean isBXPTHOpen;
 

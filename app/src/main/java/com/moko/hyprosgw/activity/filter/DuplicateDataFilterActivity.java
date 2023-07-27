@@ -1,6 +1,5 @@
-package com.moko.hyprosgw.activity;
+package com.moko.hyprosgw.activity.filter;
 
-import android.content.Intent;
 import android.os.Handler;
 import android.os.Looper;
 import android.text.TextUtils;
@@ -13,7 +12,7 @@ import com.google.gson.reflect.TypeToken;
 import com.moko.hyprosgw.AppConstants;
 import com.moko.hyprosgw.R;
 import com.moko.hyprosgw.base.BaseActivity;
-import com.moko.hyprosgw.databinding.ActivitySystemTimeProBinding;
+import com.moko.hyprosgw.databinding.ActivityDuplicateDataFilterBinding;
 import com.moko.hyprosgw.dialog.BottomDialog;
 import com.moko.hyprosgw.entity.MQTTConfig;
 import com.moko.hyprosgw.entity.MokoDevice;
@@ -21,11 +20,10 @@ import com.moko.hyprosgw.utils.SPUtiles;
 import com.moko.hyprosgw.utils.ToastUtils;
 import com.moko.support.scannergw.MQTTConstants;
 import com.moko.support.scannergw.MQTTSupport;
+import com.moko.support.scannergw.entity.DuplicateDataFilter;
 import com.moko.support.scannergw.entity.MsgConfigResult;
 import com.moko.support.scannergw.entity.MsgDeviceInfo;
 import com.moko.support.scannergw.entity.MsgReadResult;
-import com.moko.support.scannergw.entity.SystemTimePro;
-import com.moko.support.scannergw.entity.SystemTimeProRead;
 import com.moko.support.scannergw.event.DeviceOnlineEvent;
 import com.moko.support.scannergw.event.MQTTMessageArrivedEvent;
 import com.moko.support.scannergw.handler.MQTTMessageAssembler;
@@ -36,57 +34,37 @@ import org.greenrobot.eventbus.ThreadMode;
 
 import java.lang.reflect.Type;
 import java.util.ArrayList;
-import java.util.Calendar;
 
-public class SystemTimeProActivity extends BaseActivity<ActivitySystemTimeProBinding> {
-
+public class DuplicateDataFilterActivity extends BaseActivity<ActivityDuplicateDataFilterBinding> {
     private MokoDevice mMokoDevice;
     private MQTTConfig appMqttConfig;
-
     public Handler mHandler;
-    public Handler mSyncTimeHandler;
-
-    private ArrayList<String> mTimeZones;
-    private int mSelectedTimeZone;
+    private ArrayList<String> mValues;
+    private int mSelected;
 
     @Override
     protected void onCreate() {
         String mqttConfigAppStr = SPUtiles.getStringValue(this, AppConstants.SP_KEY_MQTT_CONFIG_APP, "");
         appMqttConfig = new Gson().fromJson(mqttConfigAppStr, MQTTConfig.class);
         mMokoDevice = (MokoDevice) getIntent().getSerializableExtra(AppConstants.EXTRA_KEY_DEVICE);
-        mTimeZones = new ArrayList<>();
-        for (int i = -24; i <= 28; i++) {
-            if (i < 0) {
-                if (i % 2 == 0) {
-                    int j = Math.abs(i / 2);
-                    mTimeZones.add(String.format("UTC-%02d:00", j));
-                } else {
-                    int j = Math.abs((i + 1) / 2);
-                    mTimeZones.add(String.format("UTC-%02d:30", j));
-                }
-            } else if (i == 0) {
-                mTimeZones.add("UTC");
-            } else {
-                if (i % 2 == 0) {
-                    mTimeZones.add(String.format("UTC+%02d:00", i / 2));
-                } else {
-                    mTimeZones.add(String.format("UTC+%02d:30", (i - 1) / 2));
-                }
-            }
-        }
+        mValues = new ArrayList<>();
+        mValues.add("None");
+        mValues.add("MAC");
+        mValues.add("MAC+Data type");
+        mValues.add("MAC+Raw data");
+
         mHandler = new Handler(Looper.getMainLooper());
-        mSyncTimeHandler = new Handler(Looper.getMainLooper());
         showLoadingProgressDialog();
         mHandler.postDelayed(() -> {
             dismissLoadingProgressDialog();
             finish();
         }, 30 * 1000);
-        getSystemTime();
+        getDuplicateDataFilter();
     }
 
     @Override
-    protected ActivitySystemTimeProBinding getViewBinding() {
-        return ActivitySystemTimeProBinding.inflate(getLayoutInflater());
+    protected ActivityDuplicateDataFilterBinding getViewBinding() {
+        return ActivityDuplicateDataFilterBinding.inflate(getLayoutInflater());
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
@@ -105,32 +83,21 @@ public class SystemTimeProActivity extends BaseActivity<ActivitySystemTimeProBin
             e.printStackTrace();
             return;
         }
-        if (msg_id == MQTTConstants.READ_MSG_ID_SYSTEM_TIME) {
-            Type type = new TypeToken<MsgReadResult<SystemTimeProRead>>() {
+        if (msg_id == MQTTConstants.READ_MSG_ID_DUPLICATE_DATA_FILTER) {
+            Type type = new TypeToken<MsgReadResult<DuplicateDataFilter>>() {
             }.getType();
-            MsgReadResult<SystemTimeProRead> result = new Gson().fromJson(message, type);
+            MsgReadResult<DuplicateDataFilter> result = new Gson().fromJson(message, type);
             if (!mMokoDevice.deviceId.equals(result.device_info.device_id)) {
                 return;
             }
             dismissLoadingProgressDialog();
             mHandler.removeMessages(0);
-            String timestamp = result.data.timestamp;
-            String date = timestamp.substring(0, 10);
-            String time = timestamp.substring(11, 16);
-            mSelectedTimeZone = result.data.timezone + 24;
-            mBind.tvTimeZone.setText(mTimeZones.get(mSelectedTimeZone));
-            mBind.tvDeviceTime.setText(String.format("Device time:%s %s %s", date, time, mTimeZones.get(mSelectedTimeZone)));
-            if (mSyncTimeHandler.hasMessages(0))
-                mSyncTimeHandler.removeMessages(0);
-            mSyncTimeHandler.postDelayed(() -> {
-                showLoadingProgressDialog();
-                mHandler.postDelayed(() -> {
-                    dismissLoadingProgressDialog();
-                }, 30 * 1000);
-                getSystemTime();
-            }, 30 * 1000);
+            mSelected = result.data.rule;
+            mBind.tvFilerBy.setText(mValues.get(mSelected));
+            mBind.rlFilteringPeriod.setVisibility(mSelected > 0 ? View.VISIBLE : View.GONE);
+            mBind.etFilteringPeriod.setText(String.valueOf(result.data.time));
         }
-        if (msg_id == MQTTConstants.CONFIG_MSG_ID_SYSTEM_TIME) {
+        if (msg_id == MQTTConstants.CONFIG_MSG_ID_DUPLICATE_DATA_FILTER) {
             Type type = new TypeToken<MsgConfigResult>() {
             }.getType();
             MsgConfigResult result = new Gson().fromJson(message, type);
@@ -141,12 +108,6 @@ public class SystemTimeProActivity extends BaseActivity<ActivitySystemTimeProBin
             mHandler.removeMessages(0);
             if (result.result_code == 0) {
                 ToastUtils.showToast(this, "Set up succeed");
-                showLoadingProgressDialog();
-                mHandler.postDelayed(() -> {
-                    dismissLoadingProgressDialog();
-                    finish();
-                }, 30 * 1000);
-                getSystemTime();
             } else {
                 ToastUtils.showToast(this, "Set up failed");
             }
@@ -169,7 +130,7 @@ public class SystemTimeProActivity extends BaseActivity<ActivitySystemTimeProBin
         finish();
     }
 
-    private void setSystemTime() {
+    private void setFilterPeriod(int filterPeriod) {
         String appTopic;
         if (TextUtils.isEmpty(appMqttConfig.topicPublish)) {
             appTopic = mMokoDevice.topicSubscribe;
@@ -179,19 +140,19 @@ public class SystemTimeProActivity extends BaseActivity<ActivitySystemTimeProBin
         MsgDeviceInfo deviceInfo = new MsgDeviceInfo();
         deviceInfo.device_id = mMokoDevice.deviceId;
         deviceInfo.mac = mMokoDevice.mac;
-        SystemTimePro systemTime = new SystemTimePro();
-        systemTime.timezone = mSelectedTimeZone - 24;
-        systemTime.timestamp = Calendar.getInstance().getTimeInMillis() / 1000;
-        String message = MQTTMessageAssembler.assembleWriteSystemTimePro(deviceInfo, systemTime);
+        DuplicateDataFilter dataFilter = new DuplicateDataFilter();
+        dataFilter.rule = mSelected;
+        dataFilter.time = filterPeriod;
+        String message = MQTTMessageAssembler.assembleWriteDuplicateDataFilter(deviceInfo, dataFilter);
         try {
-            MQTTSupport.getInstance().publish(appTopic, message, MQTTConstants.CONFIG_MSG_ID_SYSTEM_TIME, appMqttConfig.qos);
+            MQTTSupport.getInstance().publish(appTopic, message, MQTTConstants.CONFIG_MSG_ID_DUPLICATE_DATA_FILTER, appMqttConfig.qos);
         } catch (MqttException e) {
             e.printStackTrace();
         }
     }
 
 
-    private void getSystemTime() {
+    private void getDuplicateDataFilter() {
         String appTopic;
         if (TextUtils.isEmpty(appMqttConfig.topicPublish)) {
             appTopic = mMokoDevice.topicSubscribe;
@@ -201,17 +162,29 @@ public class SystemTimeProActivity extends BaseActivity<ActivitySystemTimeProBin
         MsgDeviceInfo deviceInfo = new MsgDeviceInfo();
         deviceInfo.device_id = mMokoDevice.deviceId;
         deviceInfo.mac = mMokoDevice.mac;
-        String message = MQTTMessageAssembler.assembleReadSystemTimePro(deviceInfo);
+        String message = MQTTMessageAssembler.assembleReadDuplicateDataFilter(deviceInfo);
         try {
-            MQTTSupport.getInstance().publish(appTopic, message, MQTTConstants.READ_MSG_ID_SYSTEM_TIME, appMqttConfig.qos);
+            MQTTSupport.getInstance().publish(appTopic, message, MQTTConstants.READ_MSG_ID_DUPLICATE_DATA_FILTER, appMqttConfig.qos);
         } catch (MqttException e) {
             e.printStackTrace();
         }
     }
 
-    public void onSyncTimeFromNTP(View view) {
+    public void onFilterBy(View view) {
+        BottomDialog dialog = new BottomDialog();
+        dialog.setDatas(mValues, mSelected);
+        dialog.setListener(value -> {
+            mSelected = value;
+            mBind.tvFilerBy.setText(mValues.get(value));
+            mBind.rlFilteringPeriod.setVisibility(mSelected > 0 ? View.VISIBLE : View.GONE);
+        });
+        dialog.show(getSupportFragmentManager());
+    }
+
+    public void onSave(View view) {
         if (isWindowLocked())
             return;
+        String filterPeriod = mBind.etFilteringPeriod.getText().toString();
         if (!MQTTSupport.getInstance().isConnected()) {
             ToastUtils.showToast(this, R.string.network_error);
             return;
@@ -220,54 +193,20 @@ public class SystemTimeProActivity extends BaseActivity<ActivitySystemTimeProBin
             ToastUtils.showToast(this, R.string.device_offline);
             return;
         }
-        Intent i = new Intent(this, SyncTimeFromNTPActivity.class);
-        i.putExtra(AppConstants.EXTRA_KEY_DEVICE, mMokoDevice);
-        startActivity(i);
-    }
-
-    public void onSyncTimeFromPhone(View view) {
-        if (isWindowLocked())
+        if (TextUtils.isEmpty(filterPeriod)) {
+            ToastUtils.showToast(this, "Para Error");
             return;
+        }
+        int period = Integer.parseInt(filterPeriod);
+        if (period < 1 || period > 86400) {
+            ToastUtils.showToast(this, "Para Error");
+            return;
+        }
         mHandler.postDelayed(() -> {
             dismissLoadingProgressDialog();
             ToastUtils.showToast(this, "Set up failed");
         }, 30 * 1000);
         showLoadingProgressDialog();
-        setSystemTime();
-    }
-
-    public void onSelectTimeZone(View view) {
-        if (isWindowLocked())
-            return;
-        BottomDialog dialog = new BottomDialog();
-        dialog.setDatas(mTimeZones, mSelectedTimeZone);
-        dialog.setListener(value -> {
-            if (!MQTTSupport.getInstance().isConnected()) {
-                ToastUtils.showToast(this, R.string.network_error);
-                return;
-            }
-            if (!mMokoDevice.isOnline) {
-                ToastUtils.showToast(this, R.string.device_offline);
-                return;
-            }
-            mSelectedTimeZone = value;
-            mBind.tvTimeZone.setText(mTimeZones.get(mSelectedTimeZone));
-            mHandler.postDelayed(() -> {
-                dismissLoadingProgressDialog();
-                ToastUtils.showToast(this, "Set up failed");
-            }, 30 * 1000);
-            showLoadingProgressDialog();
-            setSystemTime();
-        });
-        dialog.show(getSupportFragmentManager());
-    }
-
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        if (mSyncTimeHandler.hasMessages(0))
-            mSyncTimeHandler.removeMessages(0);
-        if (mHandler.hasMessages(0))
-            mHandler.removeMessages(0);
+        setFilterPeriod(period);
     }
 }

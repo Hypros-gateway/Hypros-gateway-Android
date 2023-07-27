@@ -19,6 +19,8 @@ import com.moko.support.scannergw.entity.FilterTLM;
 import com.moko.support.scannergw.entity.FilterType;
 import com.moko.support.scannergw.entity.FilterUid;
 import com.moko.support.scannergw.entity.FilterUrl;
+import com.moko.support.scannergw.entity.IBeaconAdvParams;
+import com.moko.support.scannergw.entity.IBeaconEnable;
 import com.moko.support.scannergw.entity.IndicatorLightStatus;
 import com.moko.support.scannergw.entity.MQTTReconnect;
 import com.moko.support.scannergw.entity.MQTTSettings;
@@ -69,11 +71,49 @@ public class MQTTMessageAssembler {
         return message;
     }
 
+    public static String assembleReadBeaconEnable(MsgDeviceInfo deviceInfo) {
+        MsgReadReq readReq = new MsgReadReq();
+        readReq.device_info = deviceInfo;
+        readReq.msg_id = MQTTConstants.READ_MSG_ID_BEACON_ENABLE;
+        String message = new Gson().toJson(readReq);
+        XLog.e("app_to_device--->" + message);
+        return message;
+    }
+
+    public static String assembleReadBeaconAdvParams(MsgDeviceInfo deviceInfo) {
+        MsgReadReq readReq = new MsgReadReq();
+        readReq.device_info = deviceInfo;
+        readReq.msg_id = MQTTConstants.READ_MSG_ID_BEACON_ADV_PARAMS;
+        String message = new Gson().toJson(readReq);
+        XLog.e("app_to_device--->" + message);
+        return message;
+    }
+
     public static String assembleWriteLEDStatus(MsgDeviceInfo deviceInfo, IndicatorLightStatus lightStatus) {
         MsgConfigReq<IndicatorLightStatus> configReq = new MsgConfigReq();
         configReq.device_info = deviceInfo;
         configReq.msg_id = MQTTConstants.CONFIG_MSG_ID_INDICATOR_STATUS;
         configReq.data = lightStatus;
+        String message = new Gson().toJson(configReq);
+        XLog.e("app_to_device--->" + message);
+        return message;
+    }
+
+    public static String assembleWriteBeaconEnable(MsgDeviceInfo deviceInfo, IBeaconEnable beaconEnable) {
+        MsgConfigReq<IBeaconEnable> configReq = new MsgConfigReq<>();
+        configReq.device_info = deviceInfo;
+        configReq.msg_id = MQTTConstants.CONFIG_MSG_ID_BEACON_ENABLE;
+        configReq.data = beaconEnable;
+        String message = new Gson().toJson(configReq);
+        XLog.e("app_to_device--->" + message);
+        return message;
+    }
+
+    public static String assembleWriteBeaconAdvParams(MsgDeviceInfo deviceInfo, IBeaconAdvParams advParams) {
+        MsgConfigReq<IBeaconAdvParams> configReq = new MsgConfigReq<>();
+        configReq.device_info = deviceInfo;
+        configReq.msg_id = MQTTConstants.CONFIG_MSG_ID_BEACON_ADV_PARAMS;
+        configReq.data = advParams;
         String message = new Gson().toJson(configReq);
         XLog.e("app_to_device--->" + message);
         return message;

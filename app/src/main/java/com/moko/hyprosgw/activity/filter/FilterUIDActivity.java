@@ -1,4 +1,5 @@
-package com.moko.hyprosgw.activity;
+package com.moko.hyprosgw.activity.filter;
+
 
 import android.os.Handler;
 import android.os.Looper;
@@ -11,17 +12,17 @@ import com.google.gson.JsonObject;
 import com.google.gson.reflect.TypeToken;
 import com.moko.hyprosgw.AppConstants;
 import com.moko.hyprosgw.base.BaseActivity;
-import com.moko.hyprosgw.databinding.ActivityBeaconTypeFilterBinding;
+import com.moko.hyprosgw.databinding.ActivityFilterUidBinding;
 import com.moko.hyprosgw.entity.MQTTConfig;
 import com.moko.hyprosgw.entity.MokoDevice;
 import com.moko.hyprosgw.utils.SPUtiles;
 import com.moko.hyprosgw.utils.ToastUtils;
 import com.moko.support.scannergw.MQTTConstants;
 import com.moko.support.scannergw.MQTTSupport;
+import com.moko.support.scannergw.entity.FilterUid;
 import com.moko.support.scannergw.entity.MsgConfigResult;
 import com.moko.support.scannergw.entity.MsgDeviceInfo;
 import com.moko.support.scannergw.entity.MsgReadResult;
-import com.moko.support.scannergw.entity.TypeFilter;
 import com.moko.support.scannergw.event.DeviceOnlineEvent;
 import com.moko.support.scannergw.event.MQTTMessageArrivedEvent;
 import com.moko.support.scannergw.handler.MQTTMessageAssembler;
@@ -32,7 +33,7 @@ import org.greenrobot.eventbus.ThreadMode;
 
 import java.lang.reflect.Type;
 
-public class BeaconTypeFilterActivity extends BaseActivity<ActivityBeaconTypeFilterBinding> {
+public class FilterUIDActivity extends BaseActivity<ActivityFilterUidBinding> {
 
     private MokoDevice mMokoDevice;
     private MQTTConfig appMqttConfig;
@@ -41,6 +42,7 @@ public class BeaconTypeFilterActivity extends BaseActivity<ActivityBeaconTypeFil
 
     @Override
     protected void onCreate() {
+
         String mqttConfigAppStr = SPUtiles.getStringValue(this, AppConstants.SP_KEY_MQTT_CONFIG_APP, "");
         appMqttConfig = new Gson().fromJson(mqttConfigAppStr, MQTTConfig.class);
         mMokoDevice = (MokoDevice) getIntent().getSerializableExtra(AppConstants.EXTRA_KEY_DEVICE);
@@ -50,12 +52,12 @@ public class BeaconTypeFilterActivity extends BaseActivity<ActivityBeaconTypeFil
             dismissLoadingProgressDialog();
             finish();
         }, 30 * 1000);
-        getBeaconTypeFilter();
+        getFilterUid();
     }
 
     @Override
-    protected ActivityBeaconTypeFilterBinding getViewBinding() {
-        return ActivityBeaconTypeFilterBinding.inflate(getLayoutInflater());
+    protected ActivityFilterUidBinding getViewBinding() {
+        return ActivityFilterUidBinding.inflate(getLayoutInflater());
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
@@ -74,26 +76,20 @@ public class BeaconTypeFilterActivity extends BaseActivity<ActivityBeaconTypeFil
             e.printStackTrace();
             return;
         }
-        if (msg_id == MQTTConstants.READ_MSG_ID_BEACON_TYPE_FILTER) {
-            Type type = new TypeToken<MsgReadResult<TypeFilter>>() {
+        if (msg_id == MQTTConstants.READ_MSG_ID_FILTER_UID) {
+            Type type = new TypeToken<MsgReadResult<FilterUid>>() {
             }.getType();
-            MsgReadResult<TypeFilter> result = new Gson().fromJson(message, type);
+            MsgReadResult<FilterUid> result = new Gson().fromJson(message, type);
             if (!mMokoDevice.deviceId.equals(result.device_info.device_id)) {
                 return;
             }
             dismissLoadingProgressDialog();
             mHandler.removeMessages(0);
-            mBind.cbTypeIbeacon.setChecked(result.data.ibeacon == 1);
-            mBind.cbTypeEddystoneUid.setChecked(result.data.eddystone_uid == 1);
-            mBind.cbTypeEddystoneUrl.setChecked(result.data.eddystone_url == 1);
-            mBind.cbTypeEddystoneTlm.setChecked(result.data.eddystone_tlm == 1);
-            mBind.cbTypeMkibeacon.setChecked(result.data.MK_iBeacon == 1);
-            mBind.cbTypeMkibeaconAcc.setChecked(result.data.MK_ACC == 1);
-            mBind.cbTypeBxpAcc.setChecked(result.data.BXP_ACC == 1);
-            mBind.cbTypeBxpTh.setChecked(result.data.BXP_TH == 1);
-            mBind.cbTypeUnknown.setChecked(result.data.unknown == 1);
+            mBind.cbUid.setChecked(result.data.onOff == 1);
+            mBind.etUidNamespace.setText(result.data.namespace);
+            mBind.etUidInstanceId.setText(result.data.instance);
         }
-        if (msg_id == MQTTConstants.CONFIG_MSG_ID_BEACON_TYPE_FILTER) {
+        if (msg_id == MQTTConstants.CONFIG_MSG_ID_FILTER_UID) {
             Type type = new TypeToken<MsgConfigResult>() {
             }.getType();
             MsgConfigResult result = new Gson().fromJson(message, type);
@@ -126,7 +122,7 @@ public class BeaconTypeFilterActivity extends BaseActivity<ActivityBeaconTypeFil
         finish();
     }
 
-    private void setBeaconTypeFilter() {
+    private void getFilterUid() {
         String appTopic;
         if (TextUtils.isEmpty(appMqttConfig.topicPublish)) {
             appTopic = mMokoDevice.topicSubscribe;
@@ -136,51 +132,73 @@ public class BeaconTypeFilterActivity extends BaseActivity<ActivityBeaconTypeFil
         MsgDeviceInfo deviceInfo = new MsgDeviceInfo();
         deviceInfo.device_id = mMokoDevice.deviceId;
         deviceInfo.mac = mMokoDevice.mac;
-        TypeFilter typeFilter = new TypeFilter();
-        typeFilter.ibeacon = mBind.cbTypeIbeacon.isChecked() ? 1 : 0;
-        typeFilter.eddystone_uid = mBind.cbTypeEddystoneUid.isChecked() ? 1 : 0;
-        typeFilter.eddystone_url = mBind.cbTypeEddystoneUrl.isChecked() ? 1 : 0;
-        typeFilter.eddystone_tlm = mBind.cbTypeEddystoneTlm.isChecked() ? 1 : 0;
-        typeFilter.MK_iBeacon = mBind.cbTypeMkibeacon.isChecked() ? 1 : 0;
-        typeFilter.MK_ACC = mBind.cbTypeMkibeaconAcc.isChecked() ? 1 : 0;
-        typeFilter.BXP_ACC = mBind.cbTypeBxpAcc.isChecked() ? 1 : 0;
-        typeFilter.BXP_TH = mBind.cbTypeBxpTh.isChecked() ? 1 : 0;
-        typeFilter.unknown = mBind.cbTypeUnknown.isChecked() ? 1 : 0;
-        String message = MQTTMessageAssembler.assembleWriteBeaconTypeFilter(deviceInfo, typeFilter);
+        String message = MQTTMessageAssembler.assembleReadFilterUid(deviceInfo);
         try {
-            MQTTSupport.getInstance().publish(appTopic, message, MQTTConstants.CONFIG_MSG_ID_BEACON_TYPE_FILTER, appMqttConfig.qos);
+            MQTTSupport.getInstance().publish(appTopic, message, MQTTConstants.READ_MSG_ID_FILTER_UID, appMqttConfig.qos);
         } catch (MqttException e) {
             e.printStackTrace();
         }
     }
 
-
-    private void getBeaconTypeFilter() {
-        String appTopic;
-        if (TextUtils.isEmpty(appMqttConfig.topicPublish)) {
-            appTopic = mMokoDevice.topicSubscribe;
-        } else {
-            appTopic = appMqttConfig.topicPublish;
-        }
-        MsgDeviceInfo deviceInfo = new MsgDeviceInfo();
-        deviceInfo.device_id = mMokoDevice.deviceId;
-        deviceInfo.mac = mMokoDevice.mac;
-        String message = MQTTMessageAssembler.assembleReadBeaconTypeFilter(deviceInfo);
-        try {
-            MQTTSupport.getInstance().publish(appTopic, message, MQTTConstants.READ_MSG_ID_BEACON_TYPE_FILTER, appMqttConfig.qos);
-        } catch (MqttException e) {
-            e.printStackTrace();
-        }
+    public void onBack(View view) {
+        finish();
     }
 
     public void onSave(View view) {
         if (isWindowLocked())
             return;
-        mHandler.postDelayed(() -> {
-            dismissLoadingProgressDialog();
-            ToastUtils.showToast(this, "Set up failed");
-        }, 30 * 1000);
-        showLoadingProgressDialog();
-        setBeaconTypeFilter();
+        if (isValid()) {
+            mHandler.postDelayed(() -> {
+                dismissLoadingProgressDialog();
+                ToastUtils.showToast(this, "Set up failed");
+            }, 30 * 1000);
+            showLoadingProgressDialog();
+            saveParams();
+        }
+    }
+
+
+    private void saveParams() {
+        String appTopic;
+        if (TextUtils.isEmpty(appMqttConfig.topicPublish)) {
+            appTopic = mMokoDevice.topicSubscribe;
+        } else {
+            appTopic = appMqttConfig.topicPublish;
+        }
+        MsgDeviceInfo deviceInfo = new MsgDeviceInfo();
+        deviceInfo.device_id = mMokoDevice.deviceId;
+        deviceInfo.mac = mMokoDevice.mac;
+
+        FilterUid filterUid = new FilterUid();
+        filterUid.onOff = mBind.cbUid.isChecked() ? 1 : 0;
+        filterUid.namespace = mBind.etUidNamespace.getText().toString();
+        filterUid.instance = mBind.etUidInstanceId.getText().toString();
+
+        String message = MQTTMessageAssembler.assembleWriteFilterUid(deviceInfo, filterUid);
+        try {
+            MQTTSupport.getInstance().publish(appTopic, message, MQTTConstants.CONFIG_MSG_ID_FILTER_UID, appMqttConfig.qos);
+        } catch (MqttException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private boolean isValid() {
+        final String namespace = mBind.etUidNamespace.getText().toString();
+        final String instanceId = mBind.etUidInstanceId.getText().toString();
+        if (!TextUtils.isEmpty(namespace)) {
+            int length = namespace.length();
+            if (length % 2 != 0) {
+                ToastUtils.showToast(this, "Para Error");
+                return false;
+            }
+        }
+        if (!TextUtils.isEmpty(instanceId)) {
+            int length = instanceId.length();
+            if (length % 2 != 0) {
+                ToastUtils.showToast(this, "Para Error");
+                return false;
+            }
+        }
+        return true;
     }
 }

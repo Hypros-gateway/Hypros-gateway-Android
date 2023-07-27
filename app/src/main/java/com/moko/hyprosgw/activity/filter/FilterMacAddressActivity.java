@@ -1,25 +1,29 @@
-package com.moko.hyprosgw.activity;
-
+package com.moko.hyprosgw.activity.filter;
 
 import android.os.Handler;
 import android.os.Looper;
 import android.text.TextUtils;
+import android.view.LayoutInflater;
 import android.view.View;
+import android.widget.EditText;
+import android.widget.TextView;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.reflect.TypeToken;
 import com.moko.hyprosgw.AppConstants;
+import com.moko.hyprosgw.R;
 import com.moko.hyprosgw.base.BaseActivity;
-import com.moko.hyprosgw.databinding.ActivityFilterUidBinding;
+import com.moko.hyprosgw.databinding.ActivityFilterMacAddressBinding;
+import com.moko.hyprosgw.dialog.AlertMessageDialog;
 import com.moko.hyprosgw.entity.MQTTConfig;
 import com.moko.hyprosgw.entity.MokoDevice;
 import com.moko.hyprosgw.utils.SPUtiles;
 import com.moko.hyprosgw.utils.ToastUtils;
 import com.moko.support.scannergw.MQTTConstants;
 import com.moko.support.scannergw.MQTTSupport;
-import com.moko.support.scannergw.entity.FilterUid;
+import com.moko.support.scannergw.entity.FilterType;
 import com.moko.support.scannergw.entity.MsgConfigResult;
 import com.moko.support.scannergw.entity.MsgDeviceInfo;
 import com.moko.support.scannergw.entity.MsgReadResult;
@@ -32,32 +36,33 @@ import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
 
 import java.lang.reflect.Type;
+import java.util.ArrayList;
+import java.util.List;
 
-public class FilterUIDActivity extends BaseActivity<ActivityFilterUidBinding> {
-
+public class FilterMacAddressActivity extends BaseActivity<ActivityFilterMacAddressBinding> {
     private MokoDevice mMokoDevice;
     private MQTTConfig appMqttConfig;
-
     public Handler mHandler;
+    private List<String> filterMacAddress;
 
     @Override
     protected void onCreate() {
-
         String mqttConfigAppStr = SPUtiles.getStringValue(this, AppConstants.SP_KEY_MQTT_CONFIG_APP, "");
         appMqttConfig = new Gson().fromJson(mqttConfigAppStr, MQTTConfig.class);
         mMokoDevice = (MokoDevice) getIntent().getSerializableExtra(AppConstants.EXTRA_KEY_DEVICE);
+
         mHandler = new Handler(Looper.getMainLooper());
         showLoadingProgressDialog();
         mHandler.postDelayed(() -> {
             dismissLoadingProgressDialog();
             finish();
         }, 30 * 1000);
-        getFilterUid();
+        getFilterMacAddress();
     }
 
     @Override
-    protected ActivityFilterUidBinding getViewBinding() {
-        return ActivityFilterUidBinding.inflate(getLayoutInflater());
+    protected ActivityFilterMacAddressBinding getViewBinding() {
+        return ActivityFilterMacAddressBinding.inflate(getLayoutInflater());
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
@@ -76,20 +81,37 @@ public class FilterUIDActivity extends BaseActivity<ActivityFilterUidBinding> {
             e.printStackTrace();
             return;
         }
-        if (msg_id == MQTTConstants.READ_MSG_ID_FILTER_UID) {
-            Type type = new TypeToken<MsgReadResult<FilterUid>>() {
+        if (msg_id == MQTTConstants.READ_MSG_ID_FILTER_MAC_ADDRESS) {
+            Type type = new TypeToken<MsgReadResult<FilterType>>() {
             }.getType();
-            MsgReadResult<FilterUid> result = new Gson().fromJson(message, type);
+            MsgReadResult<FilterType> result = new Gson().fromJson(message, type);
             if (!mMokoDevice.deviceId.equals(result.device_info.device_id)) {
                 return;
             }
             dismissLoadingProgressDialog();
             mHandler.removeMessages(0);
-            mBind.cbUid.setChecked(result.data.onOff == 1);
-            mBind.etUidNamespace.setText(result.data.namespace);
-            mBind.etUidInstanceId.setText(result.data.instance);
+            mBind.cbPreciseMatch.setChecked(result.data.precise == 1);
+            mBind.cbReverseFilter.setChecked(result.data.reverse == 1);
+            int number = result.data.array_num;
+            if (number == 0) {
+                filterMacAddress = new ArrayList<>();
+            } else {
+                filterMacAddress = result.data.rule;
+                if (filterMacAddress.size() > 0) {
+                    for (int i = 0, l = filterMacAddress.size(); i < l; i++) {
+                        String macAddress = filterMacAddress.get(i);
+                        View v = LayoutInflater.from(this).inflate(R.layout.item_mac_address_filter, mBind.llMacAddress, false);
+                        TextView title = v.findViewById(R.id.tv_mac_address_title);
+                        EditText etMacAddress = v.findViewById(R.id.et_mac_address);
+                        title.setText(String.format("MAC %d", i + 1));
+                        etMacAddress.setText(macAddress);
+                        mBind.llMacAddress.addView(v);
+                    }
+                }
+            }
+
         }
-        if (msg_id == MQTTConstants.CONFIG_MSG_ID_FILTER_UID) {
+        if (msg_id == MQTTConstants.CONFIG_MSG_ID_FILTER_MAC_ADDRESS) {
             Type type = new TypeToken<MsgConfigResult>() {
             }.getType();
             MsgConfigResult result = new Gson().fromJson(message, type);
@@ -122,7 +144,7 @@ public class FilterUIDActivity extends BaseActivity<ActivityFilterUidBinding> {
         finish();
     }
 
-    private void getFilterUid() {
+    private void getFilterMacAddress() {
         String appTopic;
         if (TextUtils.isEmpty(appMqttConfig.topicPublish)) {
             appTopic = mMokoDevice.topicSubscribe;
@@ -132,9 +154,9 @@ public class FilterUIDActivity extends BaseActivity<ActivityFilterUidBinding> {
         MsgDeviceInfo deviceInfo = new MsgDeviceInfo();
         deviceInfo.device_id = mMokoDevice.deviceId;
         deviceInfo.mac = mMokoDevice.mac;
-        String message = MQTTMessageAssembler.assembleReadFilterUid(deviceInfo);
+        String message = MQTTMessageAssembler.assembleReadFilterMacAddress(deviceInfo);
         try {
-            MQTTSupport.getInstance().publish(appTopic, message, MQTTConstants.READ_MSG_ID_FILTER_UID, appMqttConfig.qos);
+            MQTTSupport.getInstance().publish(appTopic, message, MQTTConstants.READ_MSG_ID_FILTER_MAC_ADDRESS, appMqttConfig.qos);
         } catch (MqttException e) {
             e.printStackTrace();
         }
@@ -157,6 +179,40 @@ public class FilterUIDActivity extends BaseActivity<ActivityFilterUidBinding> {
         }
     }
 
+    public void onAdd(View view) {
+        if (isWindowLocked())
+            return;
+        int count = mBind.llMacAddress.getChildCount();
+        if (count > 9) {
+            ToastUtils.showToast(this, "You can set up to 10 filters!");
+            return;
+        }
+        View v = LayoutInflater.from(this).inflate(R.layout.item_mac_address_filter, mBind.llMacAddress, false);
+        TextView title = v.findViewById(R.id.tv_mac_address_title);
+        title.setText(String.format("MAC %d", count + 1));
+        mBind.llMacAddress.addView(v);
+    }
+
+    public void onDel(View view) {
+        if (isWindowLocked())
+            return;
+        final int c = mBind.llMacAddress.getChildCount();
+        if (c == 0) {
+            ToastUtils.showToast(this, "There are currently no filters to delete");
+            return;
+        }
+        AlertMessageDialog dialog = new AlertMessageDialog();
+        dialog.setTitle("Warning");
+        dialog.setMessage("Please confirm whether to delete it, if yes, the last option will be deleted!");
+        dialog.setOnAlertConfirmListener(() -> {
+            int count = mBind.llMacAddress.getChildCount();
+            if (count > 0) {
+                mBind.llMacAddress.removeViewAt(count - 1);
+            }
+        });
+        dialog.show(getSupportFragmentManager());
+    }
+
 
     private void saveParams() {
         String appTopic;
@@ -169,35 +225,47 @@ public class FilterUIDActivity extends BaseActivity<ActivityFilterUidBinding> {
         deviceInfo.device_id = mMokoDevice.deviceId;
         deviceInfo.mac = mMokoDevice.mac;
 
-        FilterUid filterUid = new FilterUid();
-        filterUid.onOff = mBind.cbUid.isChecked() ? 1 : 0;
-        filterUid.namespace = mBind.etUidNamespace.getText().toString();
-        filterUid.instance = mBind.etUidInstanceId.getText().toString();
+        FilterType filterType = new FilterType();
+        filterType.precise = mBind.cbPreciseMatch.isChecked() ? 1 : 0;
+        filterType.reverse = mBind.cbReverseFilter.isChecked() ? 1 : 0;
+        filterType.array_num = filterMacAddress.size();
+        filterType.rule = filterMacAddress;
 
-        String message = MQTTMessageAssembler.assembleWriteFilterUid(deviceInfo, filterUid);
+        String message = MQTTMessageAssembler.assembleWriteFilterMacAddress(deviceInfo, filterType);
         try {
-            MQTTSupport.getInstance().publish(appTopic, message, MQTTConstants.CONFIG_MSG_ID_FILTER_UID, appMqttConfig.qos);
+            MQTTSupport.getInstance().publish(appTopic, message, MQTTConstants.CONFIG_MSG_ID_FILTER_MAC_ADDRESS, appMqttConfig.qos);
         } catch (MqttException e) {
             e.printStackTrace();
         }
     }
 
     private boolean isValid() {
-        final String namespace = mBind.etUidNamespace.getText().toString();
-        final String instanceId = mBind.etUidInstanceId.getText().toString();
-        if (!TextUtils.isEmpty(namespace)) {
-            int length = namespace.length();
-            if (length % 2 != 0) {
+        final int c = mBind.llMacAddress.getChildCount();
+        if (c > 0) {
+            // 发送设置的过滤RawData
+            int count = mBind.llMacAddress.getChildCount();
+            if (count == 0) {
                 ToastUtils.showToast(this, "Para Error");
                 return false;
             }
-        }
-        if (!TextUtils.isEmpty(instanceId)) {
-            int length = instanceId.length();
-            if (length % 2 != 0) {
-                ToastUtils.showToast(this, "Para Error");
-                return false;
+            filterMacAddress.clear();
+            for (int i = 0; i < count; i++) {
+                View v = mBind.llMacAddress.getChildAt(i);
+                EditText etMacAddress = v.findViewById(R.id.et_mac_address);
+                final String macAddress = etMacAddress.getText().toString();
+                if (TextUtils.isEmpty(macAddress)) {
+                    ToastUtils.showToast(this, "Para Error");
+                    return false;
+                }
+                int length = macAddress.length();
+                if (length % 2 != 0) {
+                    ToastUtils.showToast(this, "Para Error");
+                    return false;
+                }
+                filterMacAddress.add(macAddress);
             }
+        } else {
+            filterMacAddress = new ArrayList<>();
         }
         return true;
     }

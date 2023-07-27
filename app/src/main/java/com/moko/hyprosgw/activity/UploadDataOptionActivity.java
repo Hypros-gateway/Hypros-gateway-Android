@@ -35,7 +35,6 @@ import java.lang.reflect.Type;
 public class UploadDataOptionActivity extends BaseActivity<ActivityUploadDataOptionBinding> {
     private MokoDevice mMokoDevice;
     private MQTTConfig appMqttConfig;
-
     public Handler mHandler;
 
     @Override
@@ -73,7 +72,7 @@ public class UploadDataOptionActivity extends BaseActivity<ActivityUploadDataOpt
             e.printStackTrace();
             return;
         }
-        if (msg_id == MQTTConstants.READ_MSG_ID_UPLOAD_DATA_OPTION) {
+        if (msg_id == MQTTConstants.READ_MSG_ID_UPLOAD_DATA_OPTION_PRO) {
             Type type = new TypeToken<MsgReadResult<UploadDataOption>>() {
             }.getType();
             MsgReadResult<UploadDataOption> result = new Gson().fromJson(message, type);
@@ -85,9 +84,10 @@ public class UploadDataOptionActivity extends BaseActivity<ActivityUploadDataOpt
             mBind.cbTimestamp.setChecked(result.data.timestamp == 1);
             mBind.cbDeviceType.setChecked(result.data.type == 1);
             mBind.cbRssi.setChecked(result.data.rssi == 1);
-            mBind.cbRawData.setChecked(result.data.raw == 1);
+            mBind.cbRawDataAdv.setChecked(result.data.adv == 1);
+            mBind.cbRawDataRsp.setChecked(result.data.rsp == 1);
         }
-        if (msg_id == MQTTConstants.CONFIG_MSG_ID_UPLOAD_DATA_OPTION) {
+        if (msg_id == MQTTConstants.CONFIG_MSG_ID_UPLOAD_DATA_OPTION_PRO) {
             Type type = new TypeToken<MsgConfigResult>() {
             }.getType();
             MsgConfigResult result = new Gson().fromJson(message, type);
@@ -132,12 +132,13 @@ public class UploadDataOptionActivity extends BaseActivity<ActivityUploadDataOpt
         deviceInfo.mac = mMokoDevice.mac;
         UploadDataOption uploadDataOption = new UploadDataOption();
         uploadDataOption.type = mBind.cbDeviceType.isChecked() ? 1 : 0;
-        uploadDataOption.raw = mBind.cbRawData.isChecked() ? 1 : 0;
+        uploadDataOption.adv = mBind.cbRawDataAdv.isChecked() ? 1 : 0;
+        uploadDataOption.rsp = mBind.cbRawDataRsp.isChecked() ? 1 : 0;
         uploadDataOption.rssi = mBind.cbRssi.isChecked() ? 1 : 0;
         uploadDataOption.timestamp = mBind.cbTimestamp.isChecked() ? 1 : 0;
-        String message = MQTTMessageAssembler.assembleWriteUploadDataOption(deviceInfo, uploadDataOption);
+        String message = MQTTMessageAssembler.assembleWriteUploadDataOptionPro(deviceInfo, uploadDataOption);
         try {
-            MQTTSupport.getInstance().publish(appTopic, message, MQTTConstants.CONFIG_MSG_ID_UPLOAD_DATA_OPTION, appMqttConfig.qos);
+            MQTTSupport.getInstance().publish(appTopic, message, MQTTConstants.CONFIG_MSG_ID_UPLOAD_DATA_OPTION_PRO, appMqttConfig.qos);
         } catch (MqttException e) {
             e.printStackTrace();
         }
@@ -154,9 +155,9 @@ public class UploadDataOptionActivity extends BaseActivity<ActivityUploadDataOpt
         MsgDeviceInfo deviceInfo = new MsgDeviceInfo();
         deviceInfo.device_id = mMokoDevice.deviceId;
         deviceInfo.mac = mMokoDevice.mac;
-        String message = MQTTMessageAssembler.assembleReadUploadDataOption(deviceInfo);
+        String message = MQTTMessageAssembler.assembleReadUploadDataOptionPro(deviceInfo);
         try {
-            MQTTSupport.getInstance().publish(appTopic, message, MQTTConstants.READ_MSG_ID_UPLOAD_DATA_OPTION, appMqttConfig.qos);
+            MQTTSupport.getInstance().publish(appTopic, message, MQTTConstants.READ_MSG_ID_UPLOAD_DATA_OPTION_PRO, appMqttConfig.qos);
         } catch (MqttException e) {
             e.printStackTrace();
         }

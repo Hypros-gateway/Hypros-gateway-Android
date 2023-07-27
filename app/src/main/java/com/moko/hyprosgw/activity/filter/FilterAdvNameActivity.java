@@ -1,10 +1,9 @@
-package com.moko.hyprosgw.activity;
+package com.moko.hyprosgw.activity.filter;
 
 
 import android.os.Handler;
 import android.os.Looper;
 import android.text.InputFilter;
-import android.text.Spanned;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -43,14 +42,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class FilterAdvNameActivity extends BaseActivity<ActivityFilterAdvNameBinding> {
-
     private final String FILTER_ASCII = "[ -~]*";
-
     private MokoDevice mMokoDevice;
     private MQTTConfig appMqttConfig;
-
     public Handler mHandler;
-
     private List<String> filterAdvName;
     private InputFilter filter;
 
@@ -59,15 +54,11 @@ public class FilterAdvNameActivity extends BaseActivity<ActivityFilterAdvNameBin
         String mqttConfigAppStr = SPUtiles.getStringValue(this, AppConstants.SP_KEY_MQTT_CONFIG_APP, "");
         appMqttConfig = new Gson().fromJson(mqttConfigAppStr, MQTTConfig.class);
         mMokoDevice = (MokoDevice) getIntent().getSerializableExtra(AppConstants.EXTRA_KEY_DEVICE);
-        filter = new InputFilter() {
-            @Override
-            public CharSequence filter(CharSequence source, int start, int end, Spanned dest, int dstart, int dend) {
-                if (!(source + "").matches(FILTER_ASCII)) {
-                    return "";
-                }
-
-                return null;
+        filter = (source, start, end, dest, dstart, dend) -> {
+            if (!(source + "").matches(FILTER_ASCII)) {
+                return "";
             }
+            return null;
         };
         mHandler = new Handler(Looper.getMainLooper());
         showLoadingProgressDialog();

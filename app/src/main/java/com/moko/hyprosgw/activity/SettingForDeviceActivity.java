@@ -31,17 +31,11 @@ import org.greenrobot.eventbus.ThreadMode;
 
 import java.lang.reflect.Type;
 
-
 public class SettingForDeviceActivity extends BaseActivity<ActivitySettingForDeviceBinding> {
-
     public static String TAG = SettingForDeviceActivity.class.getSimpleName();
-
-
     private MokoDevice mMokoDevice;
     private MQTTConfig appMqttConfig;
-
     public Handler mHandler;
-
 
     @Override
     protected void onCreate() {
@@ -68,8 +62,7 @@ public class SettingForDeviceActivity extends BaseActivity<ActivitySettingForDev
         // 更新所有设备的网络状态
         final String topic = event.getTopic();
         final String message = event.getMessage();
-        if (TextUtils.isEmpty(message))
-            return;
+        if (TextUtils.isEmpty(message)) return;
         int msg_id;
         try {
             JsonObject object = new Gson().fromJson(message, JsonObject.class);

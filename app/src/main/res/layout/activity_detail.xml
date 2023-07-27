@@ -2,6 +2,7 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    xmlns:tools="http://schemas.android.com/tools"
     android:background="@color/grey_f2f2f2"
     android:orientation="vertical">
 
@@ -65,7 +66,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Scan"
+            android:text="Scanr"
             android:textColor="@color/black_333333"
             android:textSize="15sp" />
 
@@ -87,6 +88,7 @@
         android:layout_marginTop="10dp"
         android:layout_marginRight="12dp"
         android:focusable="true"
+        tools:visibility="visible"
         android:focusableInTouchMode="true"
         android:visibility="gone">
 
@@ -147,8 +149,8 @@
         android:text="@string/scan_device_total"
         android:textColor="@color/black_333333"
         android:textSize="15sp"
+        tools:visibility="visible"
         android:visibility="gone" />
-
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rv_devices"
@@ -158,5 +160,4 @@
         android:layout_weight="1.0"
         android:overScrollMode="never"
         android:visibility="gone" />
-
 </LinearLayout>

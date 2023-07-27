@@ -1,5 +1,6 @@
 package com.moko.hyprosgw.activity;
 
+import android.content.Intent;
 import android.os.Handler;
 import android.os.Looper;
 import android.text.TextUtils;
@@ -23,8 +24,8 @@ import com.moko.support.scannergw.MQTTSupport;
 import com.moko.support.scannergw.entity.MsgConfigResult;
 import com.moko.support.scannergw.entity.MsgDeviceInfo;
 import com.moko.support.scannergw.entity.MsgReadResult;
-import com.moko.support.scannergw.entity.SystemTime;
-import com.moko.support.scannergw.entity.SystemTimeRead;
+import com.moko.support.scannergw.entity.SystemTimePro;
+import com.moko.support.scannergw.entity.SystemTimeProRead;
 import com.moko.support.scannergw.event.DeviceOnlineEvent;
 import com.moko.support.scannergw.event.MQTTMessageArrivedEvent;
 import com.moko.support.scannergw.handler.MQTTMessageAssembler;
@@ -38,7 +39,6 @@ import java.util.ArrayList;
 import java.util.Calendar;
 
 public class SystemTimeActivity extends BaseActivity<ActivitySystemTimeBinding> {
-    private ActivitySystemTimeBinding mBind;
 
     private MokoDevice mMokoDevice;
     private MQTTConfig appMqttConfig;
@@ -55,13 +55,23 @@ public class SystemTimeActivity extends BaseActivity<ActivitySystemTimeBinding> 
         appMqttConfig = new Gson().fromJson(mqttConfigAppStr, MQTTConfig.class);
         mMokoDevice = (MokoDevice) getIntent().getSerializableExtra(AppConstants.EXTRA_KEY_DEVICE);
         mTimeZones = new ArrayList<>();
-        for (int i = 0; i <= 24; i++) {
-            if (i < 12) {
-                mTimeZones.add(String.format("UTC-%02d", 12 - i));
-            } else if (i == 12) {
-                mTimeZones.add("UTC+00");
+        for (int i = -24; i <= 28; i++) {
+            if (i < 0) {
+                if (i % 2 == 0) {
+                    int j = Math.abs(i / 2);
+                    mTimeZones.add(String.format("UTC-%02d:00", j));
+                } else {
+                    int j = Math.abs((i + 1) / 2);
+                    mTimeZones.add(String.format("UTC-%02d:30", j));
+                }
+            } else if (i == 0) {
+                mTimeZones.add("UTC");
             } else {
-                mTimeZones.add(String.format("UTC+%02d", i - 12));
+                if (i % 2 == 0) {
+                    mTimeZones.add(String.format("UTC+%02d:00", i / 2));
+                } else {
+                    mTimeZones.add(String.format("UTC+%02d:30", (i - 1) / 2));
+                }
             }
         }
         mHandler = new Handler(Looper.getMainLooper());
@@ -95,10 +105,10 @@ public class SystemTimeActivity extends BaseActivity<ActivitySystemTimeBinding> 
             e.printStackTrace();
             return;
         }
-        if (msg_id == MQTTConstants.READ_MSG_ID_UTC) {
-            Type type = new TypeToken<MsgReadResult<SystemTimeRead>>() {
+        if (msg_id == MQTTConstants.READ_MSG_ID_SYSTEM_TIME) {
+            Type type = new TypeToken<MsgReadResult<SystemTimeProRead>>() {
             }.getType();
-            MsgReadResult<SystemTimeRead> result = new Gson().fromJson(message, type);
+            MsgReadResult<SystemTimeProRead> result = new Gson().fromJson(message, type);
             if (!mMokoDevice.deviceId.equals(result.device_info.device_id)) {
                 return;
             }
@@ -107,16 +117,20 @@ public class SystemTimeActivity extends BaseActivity<ActivitySystemTimeBinding> 
             String timestamp = result.data.timestamp;
             String date = timestamp.substring(0, 10);
             String time = timestamp.substring(11, 16);
-            mSelectedTimeZone = result.data.time_zone + 12;
+            mSelectedTimeZone = result.data.timezone + 24;
             mBind.tvTimeZone.setText(mTimeZones.get(mSelectedTimeZone));
             mBind.tvDeviceTime.setText(String.format("Device time:%s %s %s", date, time, mTimeZones.get(mSelectedTimeZone)));
             if (mSyncTimeHandler.hasMessages(0))
                 mSyncTimeHandler.removeMessages(0);
             mSyncTimeHandler.postDelayed(() -> {
+                showLoadingProgressDialog();
+                mHandler.postDelayed(() -> {
+                    dismissLoadingProgressDialog();
+                }, 30 * 1000);
                 getSystemTime();
             }, 30 * 1000);
         }
-        if (msg_id == MQTTConstants.CONFIG_MSG_ID_UTC) {
+        if (msg_id == MQTTConstants.CONFIG_MSG_ID_SYSTEM_TIME) {
             Type type = new TypeToken<MsgConfigResult>() {
             }.getType();
             MsgConfigResult result = new Gson().fromJson(message, type);
@@ -165,12 +179,12 @@ public class SystemTimeActivity extends BaseActivity<ActivitySystemTimeBinding> 
         MsgDeviceInfo deviceInfo = new MsgDeviceInfo();
         deviceInfo.device_id = mMokoDevice.deviceId;
         deviceInfo.mac = mMokoDevice.mac;
-        SystemTime systemTime = new SystemTime();
-        systemTime.time_zone = mSelectedTimeZone - 12;
+        SystemTimePro systemTime = new SystemTimePro();
+        systemTime.timezone = mSelectedTimeZone - 24;
         systemTime.timestamp = Calendar.getInstance().getTimeInMillis() / 1000;
-        String message = MQTTMessageAssembler.assembleWriteSystemTime(deviceInfo, systemTime);
+        String message = MQTTMessageAssembler.assembleWriteSystemTimePro(deviceInfo, systemTime);
         try {
-            MQTTSupport.getInstance().publish(appTopic, message, MQTTConstants.CONFIG_MSG_ID_UTC, appMqttConfig.qos);
+            MQTTSupport.getInstance().publish(appTopic, message, MQTTConstants.CONFIG_MSG_ID_SYSTEM_TIME, appMqttConfig.qos);
         } catch (MqttException e) {
             e.printStackTrace();
         }
@@ -187,15 +201,42 @@ public class SystemTimeActivity extends BaseActivity<ActivitySystemTimeBinding> 
         MsgDeviceInfo deviceInfo = new MsgDeviceInfo();
         deviceInfo.device_id = mMokoDevice.deviceId;
         deviceInfo.mac = mMokoDevice.mac;
-        String message = MQTTMessageAssembler.assembleReadSystemTime(deviceInfo);
+        String message = MQTTMessageAssembler.assembleReadSystemTimePro(deviceInfo);
         try {
-            MQTTSupport.getInstance().publish(appTopic, message, MQTTConstants.READ_MSG_ID_UTC, appMqttConfig.qos);
+            MQTTSupport.getInstance().publish(appTopic, message, MQTTConstants.READ_MSG_ID_SYSTEM_TIME, appMqttConfig.qos);
         } catch (MqttException e) {
             e.printStackTrace();
         }
     }
 
-    public void selectTimeZone(View view) {
+    public void onSyncTimeFromNTP(View view) {
+        if (isWindowLocked())
+            return;
+        if (!MQTTSupport.getInstance().isConnected()) {
+            ToastUtils.showToast(this, R.string.network_error);
+            return;
+        }
+        if (!mMokoDevice.isOnline) {
+            ToastUtils.showToast(this, R.string.device_offline);
+            return;
+        }
+        Intent i = new Intent(this, SyncTimeFromNTPActivity.class);
+        i.putExtra(AppConstants.EXTRA_KEY_DEVICE, mMokoDevice);
+        startActivity(i);
+    }
+
+    public void onSyncTimeFromPhone(View view) {
+        if (isWindowLocked())
+            return;
+        mHandler.postDelayed(() -> {
+            dismissLoadingProgressDialog();
+            ToastUtils.showToast(this, "Set up failed");
+        }, 30 * 1000);
+        showLoadingProgressDialog();
+        setSystemTime();
+    }
+
+    public void onSelectTimeZone(View view) {
         if (isWindowLocked())
             return;
         BottomDialog dialog = new BottomDialog();
@@ -219,17 +260,6 @@ public class SystemTimeActivity extends BaseActivity<ActivitySystemTimeBinding> 
             setSystemTime();
         });
         dialog.show(getSupportFragmentManager());
-    }
-
-    public void onSync(View view) {
-        if (isWindowLocked())
-            return;
-        mHandler.postDelayed(() -> {
-            dismissLoadingProgressDialog();
-            ToastUtils.showToast(this, "Set up failed");
-        }, 30 * 1000);
-        showLoadingProgressDialog();
-        setSystemTime();
     }
 
     @Override

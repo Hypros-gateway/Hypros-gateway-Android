@@ -1,5 +1,4 @@
-package com.moko.hyprosgw.activity;
-
+package com.moko.hyprosgw.activity.filter;
 
 import android.os.Handler;
 import android.os.Looper;
@@ -43,14 +42,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class FilterOtherActivity extends BaseActivity<ActivityFilterOtherBinding> {
-
     private MokoDevice mMokoDevice;
     private MQTTConfig appMqttConfig;
-
     public Handler mHandler;
-
     private List<FilterCondition.RawDataBean> filterOther;
-
     private ArrayList<String> mValues;
     private int mSelected;
 

@@ -116,7 +116,7 @@ public class DeviceScannerActivity extends BaseActivity<ActivityScannerBinding> 
         byte[] data = map.get(new ParcelUuid(OrderServices.SERVICE_ADV.getUuid()));
         if (data == null || data.length != 1) return;
         int type = data[0] & 0xff;
-        if (type != 3 && type != 4 && type != 5) return;
+        if (type != 4 && type != 5) return;
         deviceInfo.deviceType = type;
         mDeviceMap.put(deviceInfo.mac, deviceInfo);
     }

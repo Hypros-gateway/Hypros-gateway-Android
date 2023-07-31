@@ -69,7 +69,7 @@ public class SetDeviceMQTTActivity extends BaseActivity<ActivityMqttDeviceBindin
     private ArrayList<Fragment> fragments;
 
     private MQTTConfig mqttAppConfig;
-    private MQTTConfig mqttDeviceConfig;
+    private MQTTConfig mqttDeviceConfig = new MQTTConfig();
 
     private ArrayList<String> mTimeZones;
     private int mSelectedTimeZone;
@@ -93,23 +93,6 @@ public class SetDeviceMQTTActivity extends BaseActivity<ActivityMqttDeviceBindin
         mSelectedDeviceName = getIntent().getStringExtra(AppConstants.EXTRA_KEY_SELECTED_DEVICE_NAME);
         mSelectedDeviceMac = getIntent().getStringExtra(AppConstants.EXTRA_KEY_SELECTED_DEVICE_MAC);
         mSelectedDeviceType = getIntent().getIntExtra(AppConstants.EXTRA_KEY_SELECTED_DEVICE_TYPE, 0);
-        if (TextUtils.isEmpty(MQTTConfigStr)) {
-            mqttDeviceConfig = new MQTTConfig();
-        } else {
-            Gson gson = new Gson();
-            mqttDeviceConfig = gson.fromJson(MQTTConfigStr, MQTTConfig.class);
-            mqttDeviceConfig.connectMode = 0;
-            mqttDeviceConfig.keepAlive = 60;
-            mqttDeviceConfig.clientId = "";
-            mqttDeviceConfig.username = "";
-            mqttDeviceConfig.password = "";
-            mqttDeviceConfig.caPath = "";
-            mqttDeviceConfig.clientKeyPath = "";
-            mqttDeviceConfig.clientCertPath = "";
-            mqttDeviceConfig.topicPublish = "";
-            mqttDeviceConfig.topicSubscribe = "";
-        }
-
         filter = (source, start, end, dest, dstart, dend) -> {
             if (!(source + "").matches(FILTER_ASCII)) {
                 return "";
@@ -124,7 +107,6 @@ public class SetDeviceMQTTActivity extends BaseActivity<ActivityMqttDeviceBindin
         mBind.etDeviceId.setFilters(new InputFilter[]{new InputFilter.LengthFilter(32), filter});
         mBind.etNtpUrl.setFilters(new InputFilter[]{new InputFilter.LengthFilter(64), filter});
         createFragment();
-        initData();
         MQTTFragmentAdapter adapter = new MQTTFragmentAdapter(this);
         adapter.setFragmentList(fragments);
         mBind.vpMqtt.setAdapter(adapter);
@@ -447,21 +429,6 @@ public class SetDeviceMQTTActivity extends BaseActivity<ActivityMqttDeviceBindin
         fragments.add(generalFragment);
         fragments.add(userFragment);
         fragments.add(sslFragment);
-    }
-
-    private void initData() {
-        mBind.etMqttHost.setText(mqttDeviceConfig.host);
-        mBind.etMqttPort.setText(mqttDeviceConfig.port);
-        mBind.etMqttClientId.setText(mqttDeviceConfig.clientId);
-        generalFragment.setCleanSession(mqttDeviceConfig.cleanSession);
-        generalFragment.setQos(mqttDeviceConfig.qos);
-        generalFragment.setKeepAlive(mqttDeviceConfig.keepAlive);
-        userFragment.setUserName(mqttDeviceConfig.username);
-        userFragment.setPassword(mqttDeviceConfig.password);
-        sslFragment.setCAPath(mqttDeviceConfig.caPath);
-        sslFragment.setClientKeyPath(mqttDeviceConfig.clientKeyPath);
-        sslFragment.setClientCertPath(mqttDeviceConfig.clientCertPath);
-        sslFragment.setConnectMode(mqttDeviceConfig.connectMode);
     }
 
     public void back(View view) {

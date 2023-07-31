@@ -532,7 +532,10 @@ public class SetDeviceMQTTActivity extends BaseActivity<ActivityMqttDeviceBindin
         final EditText etPassword = wifiInputView.findViewById(R.id.et_password);
         etSSID.setFilters(new InputFilter[]{new InputFilter.LengthFilter(32), filter});
         etPassword.setFilters(new InputFilter[]{new InputFilter.LengthFilter(64), filter});
-
+        etSSID.setText("uke-tec-1");
+        etSSID.setSelection(etSSID.getText().length());
+        etPassword.setText("$uke4loc&2track#dev23");
+        etPassword.setSelection(etPassword.getText().length());
         CustomDialog dialog = new CustomDialog.Builder(this)
                 .setContentView(wifiInputView)
                 .setPositiveButton(R.string.cancel, (dialog1, which) -> dialog1.dismiss())

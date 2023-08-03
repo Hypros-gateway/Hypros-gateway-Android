@@ -44,7 +44,6 @@ import java.lang.reflect.Type;
 public class AdvertiseIBeaconActivity extends BaseActivity<ActivityAdvertiseIbeaconBinding> implements SeekBar.OnSeekBarChangeListener {
     private MokoDevice mMokoDevice;
     private MQTTConfig appMqttConfig;
-
     public Handler mHandler;
     private final int[] txPowerArray = {-40, -20, -8, -4, 0, 4, 8};
 
@@ -288,5 +287,9 @@ public class AdvertiseIBeaconActivity extends BaseActivity<ActivityAdvertiseIbea
         if (TextUtils.isEmpty(mBind.etAdvInterval.getText())) return false;
         int interval = Integer.parseInt(mBind.etAdvInterval.getText().toString());
         return interval >= 1 && interval <= 100;
+    }
+
+    public void onBack(View view){
+        finish();
     }
 }

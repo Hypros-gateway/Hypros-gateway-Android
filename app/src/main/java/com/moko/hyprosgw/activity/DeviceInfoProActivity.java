@@ -32,10 +32,8 @@ import org.greenrobot.eventbus.ThreadMode;
 import java.lang.reflect.Type;
 
 public class DeviceInfoProActivity extends BaseActivity<ActivityDeviceInfoProBinding> {
-
     private MokoDevice mMokoDevice;
     private MQTTConfig appMqttConfig;
-
     public Handler mHandler;
 
     @Override
@@ -43,7 +41,6 @@ public class DeviceInfoProActivity extends BaseActivity<ActivityDeviceInfoProBin
         String mqttConfigAppStr = SPUtiles.getStringValue(this, AppConstants.SP_KEY_MQTT_CONFIG_APP, "");
         appMqttConfig = new Gson().fromJson(mqttConfigAppStr, MQTTConfig.class);
         mMokoDevice = (MokoDevice) getIntent().getSerializableExtra(AppConstants.EXTRA_KEY_DEVICE);
-
         mHandler = new Handler(Looper.getMainLooper());
         showLoadingProgressDialog();
         mHandler.postDelayed(() -> {
@@ -63,8 +60,7 @@ public class DeviceInfoProActivity extends BaseActivity<ActivityDeviceInfoProBin
         // 更新所有设备的网络状态
         final String topic = event.getTopic();
         final String message = event.getMessage();
-        if (TextUtils.isEmpty(message))
-            return;
+        if (TextUtils.isEmpty(message)) return;
         int msg_id;
         try {
             JsonObject object = new Gson().fromJson(message, JsonObject.class);
@@ -78,9 +74,7 @@ public class DeviceInfoProActivity extends BaseActivity<ActivityDeviceInfoProBin
             Type type = new TypeToken<MsgReadResult<MasterSystemInfo>>() {
             }.getType();
             MsgReadResult<MasterSystemInfo> result = new Gson().fromJson(message, type);
-            if (!mMokoDevice.deviceId.equals(result.device_info.device_id)) {
-                return;
-            }
+            if (!mMokoDevice.deviceId.equals(result.device_info.device_id)) return;
             mBind.tvProductModel.setText(result.data.product_model);
             mBind.tvManufacturer.setText(result.data.company_name);
             mBind.tvDeviceHardwareVersion.setText(result.data.hardware_version);
@@ -93,9 +87,7 @@ public class DeviceInfoProActivity extends BaseActivity<ActivityDeviceInfoProBin
             Type type = new TypeToken<MsgReadResult<SlaveDeviceInfo>>() {
             }.getType();
             MsgReadResult<SlaveDeviceInfo> result = new Gson().fromJson(message, type);
-            if (!mMokoDevice.deviceId.equals(result.device_info.device_id)) {
-                return;
-            }
+            if (!mMokoDevice.deviceId.equals(result.device_info.device_id)) return;
             dismissLoadingProgressDialog();
             mHandler.removeMessages(0);
             mBind.tvDeviceSlaveSoftwareVersion.setText(result.data.software_version);
@@ -107,53 +99,40 @@ public class DeviceInfoProActivity extends BaseActivity<ActivityDeviceInfoProBin
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onDeviceOnlineEvent(DeviceOnlineEvent event) {
         String deviceId = event.getDeviceId();
-        if (!mMokoDevice.deviceId.equals(deviceId)) {
-            return;
-        }
+        if (!mMokoDevice.deviceId.equals(deviceId)) return;
         boolean online = event.isOnline();
-        if (!online) {
-            finish();
-        }
+        if (!online) finish();
     }
 
     public void back(View view) {
         finish();
     }
 
-
     private void getMasterDeviceInfo() {
-        String appTopic;
-        if (TextUtils.isEmpty(appMqttConfig.topicPublish)) {
-            appTopic = mMokoDevice.topicSubscribe;
-        } else {
-            appTopic = appMqttConfig.topicPublish;
-        }
         MsgDeviceInfo deviceInfo = new MsgDeviceInfo();
         deviceInfo.device_id = mMokoDevice.deviceId;
         deviceInfo.mac = mMokoDevice.mac;
         String message = MQTTMessageAssembler.assembleReadMasterDeviceInfo(deviceInfo);
         try {
-            MQTTSupport.getInstance().publish(appTopic, message, MQTTConstants.READ_MSG_ID_MASTER_DEVICE_INFO, appMqttConfig.qos);
+            MQTTSupport.getInstance().publish(getTopic(), message, MQTTConstants.READ_MSG_ID_MASTER_DEVICE_INFO, appMqttConfig.qos);
         } catch (MqttException e) {
             e.printStackTrace();
         }
     }
 
     private void getSlaveDeviceInfo() {
-        String appTopic;
-        if (TextUtils.isEmpty(appMqttConfig.topicPublish)) {
-            appTopic = mMokoDevice.topicSubscribe;
-        } else {
-            appTopic = appMqttConfig.topicPublish;
-        }
         MsgDeviceInfo deviceInfo = new MsgDeviceInfo();
         deviceInfo.device_id = mMokoDevice.deviceId;
         deviceInfo.mac = mMokoDevice.mac;
         String message = MQTTMessageAssembler.assembleReadSlaveDeviceInfo(deviceInfo);
         try {
-            MQTTSupport.getInstance().publish(appTopic, message, MQTTConstants.READ_MSG_ID_SLAVE_DEVICE_INFO, appMqttConfig.qos);
+            MQTTSupport.getInstance().publish(getTopic(), message, MQTTConstants.READ_MSG_ID_SLAVE_DEVICE_INFO, appMqttConfig.qos);
         } catch (MqttException e) {
             e.printStackTrace();
         }
+    }
+
+    private String getTopic() {
+        return TextUtils.isEmpty(appMqttConfig.topicPublish) ? mMokoDevice.topicSubscribe : appMqttConfig.topicPublish;
     }
 }

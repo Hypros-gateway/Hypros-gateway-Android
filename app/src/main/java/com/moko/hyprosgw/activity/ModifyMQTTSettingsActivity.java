@@ -63,7 +63,6 @@ public class ModifyMQTTSettingsActivity extends BaseActivity<ActivityMqttDeviceM
 
     @Override
     protected void onCreate() {
-
         String mqttConfigAppStr = SPUtiles.getStringValue(this, AppConstants.SP_KEY_MQTT_CONFIG_APP, "");
         appMqttConfig = new Gson().fromJson(mqttConfigAppStr, MQTTConfig.class);
         mMQTTSettings = new MQTTSettings();
@@ -128,8 +127,7 @@ public class ModifyMQTTSettingsActivity extends BaseActivity<ActivityMqttDeviceM
         // 更新所有设备的网络状态
         final String topic = event.getTopic();
         final String message = event.getMessage();
-        if (TextUtils.isEmpty(message))
-            return;
+        if (TextUtils.isEmpty(message)) return;
         int msg_id;
         try {
             JsonObject object = new Gson().fromJson(message, JsonObject.class);
@@ -143,9 +141,7 @@ public class ModifyMQTTSettingsActivity extends BaseActivity<ActivityMqttDeviceM
             Type type = new TypeToken<MsgConfigResult<OTAState>>() {
             }.getType();
             MsgConfigResult<OTAState> result = new Gson().fromJson(message, type);
-            if (!mMokoDevice.deviceId.equals(result.device_info.device_id)) {
-                return;
-            }
+            if (!mMokoDevice.deviceId.equals(result.device_info.device_id)) return;
             mHandler.removeMessages(0);
             if (result.result_code == 0) {
                 if (result.data.ota_state != 0) {
@@ -176,9 +172,7 @@ public class ModifyMQTTSettingsActivity extends BaseActivity<ActivityMqttDeviceM
             Type type = new TypeToken<MsgConfigResult>() {
             }.getType();
             MsgConfigResult result = new Gson().fromJson(message, type);
-            if (!mMokoDevice.deviceId.equals(result.device_info.device_id)) {
-                return;
-            }
+            if (!mMokoDevice.deviceId.equals(result.device_info.device_id)) return;
             dismissLoadingProgressDialog();
             mHandler.removeMessages(0);
             if (result.result_code == 0) {
@@ -204,13 +198,9 @@ public class ModifyMQTTSettingsActivity extends BaseActivity<ActivityMqttDeviceM
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onDeviceOnlineEvent(DeviceOnlineEvent event) {
         String deviceId = event.getDeviceId();
-        if (!mMokoDevice.deviceId.equals(deviceId)) {
-            return;
-        }
+        if (!mMokoDevice.deviceId.equals(deviceId)) return;
         boolean online = event.isOnline();
-        if (!online) {
-            finish();
-        }
+        if (!online) finish();
     }
 
     public void back(View view) {
@@ -222,8 +212,7 @@ public class ModifyMQTTSettingsActivity extends BaseActivity<ActivityMqttDeviceM
     }
 
     public void onSave(View view) {
-        if (isWindowLocked())
-            return;
+        if (isWindowLocked()) return;
         if (isValid()) {
             mHandler.postDelayed(() -> {
                 dismissLoadingProgressDialog();
@@ -234,13 +223,10 @@ public class ModifyMQTTSettingsActivity extends BaseActivity<ActivityMqttDeviceM
         }
     }
 
-
     public void onSelectCertificate(View view) {
-        if (isWindowLocked())
-            return;
+        if (isWindowLocked()) return;
         sslFragment.selectCertificate();
     }
-
 
     private void saveParams() {
         String appTopic;
@@ -264,12 +250,6 @@ public class ModifyMQTTSettingsActivity extends BaseActivity<ActivityMqttDeviceM
         mMQTTSettings.mqtt_host = host;
         mMQTTSettings.mqtt_port = Integer.parseInt(port);
         mMQTTSettings.client_id = clientId;
-        if ("{device_name}/{device_id}/app_to_device".equals(topicSubscribe)) {
-            topicSubscribe = String.format("%s/%s/app_to_device", mMokoDevice.nickName, mMokoDevice.deviceId);
-        }
-        if ("{device_name}/{device_id}/device_to_app".equals(topicPublish)) {
-            topicPublish = String.format("%s/%s/device_to_app", mMokoDevice.nickName, mMokoDevice.deviceId);
-        }
         mMQTTSettings.subscribe_topic = topicSubscribe;
         mMQTTSettings.publish_topic = topicPublish;
         mMQTTSettings.wifi_ssid = wifiSSID;
@@ -292,7 +272,6 @@ public class ModifyMQTTSettingsActivity extends BaseActivity<ActivityMqttDeviceM
             mMQTTSettings.client_cer_way = sslFragment.getClientCerPath();
             mMQTTSettings.client_key_way = sslFragment.getClientKeyPath();
         }
-
         String message = MQTTMessageAssembler.assembleWriteMQTTSettings(deviceInfo, mMQTTSettings);
         try {
             MQTTSupport.getInstance().publish(appTopic, message, MQTTConstants.CONFIG_MSG_ID_MQTT_SETTINGS, appMqttConfig.qos);
@@ -300,7 +279,6 @@ public class ModifyMQTTSettingsActivity extends BaseActivity<ActivityMqttDeviceM
             e.printStackTrace();
         }
     }
-
 
     private void setDeviceReconnect() {
         String appTopic;
@@ -322,7 +300,6 @@ public class ModifyMQTTSettingsActivity extends BaseActivity<ActivityMqttDeviceM
             e.printStackTrace();
         }
     }
-
 
     private boolean isValid() {
         String host = mBind.etMqttHost.getText().toString().trim();
@@ -364,9 +341,7 @@ public class ModifyMQTTSettingsActivity extends BaseActivity<ActivityMqttDeviceM
             ToastUtils.showToast(this, "SSID error");
             return false;
         }
-        if (!generalFragment.isValid() || !sslFragment.isValid())
-            return false;
-        return true;
+        return generalFragment.isValid() && sslFragment.isValid();
     }
 
     @Override

@@ -21,13 +21,10 @@ import com.moko.support.scannergw.event.MQTTConnectionCompleteEvent;
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
 
-
 public class ModifyNameActivity extends BaseActivity<ActivityModifyDeviceNameBinding> {
     private final String FILTER_ASCII = "[ -~]*";
     public static String TAG = ModifyNameActivity.class.getSimpleName();
-
     private MokoDevice device;
-    private InputFilter filter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -35,22 +32,18 @@ public class ModifyNameActivity extends BaseActivity<ActivityModifyDeviceNameBin
         mBind = ActivityModifyDeviceNameBinding.inflate(getLayoutInflater());
         setContentView(mBind.getRoot());
         device = (MokoDevice) getIntent().getSerializableExtra(AppConstants.EXTRA_KEY_DEVICE);
-        filter = (source, start, end, dest, dstart, dend) -> {
+        InputFilter filter = (source, start, end, dest, dstart, dend) -> {
             if (!(source + "").matches(FILTER_ASCII)) {
                 return "";
             }
-
             return null;
         };
         mBind.etNickName.setText(device.nickName);
         mBind.etNickName.setSelection(mBind.etNickName.getText().toString().length());
         mBind.etNickName.setFilters(new InputFilter[]{filter, new InputFilter.LengthFilter(20)});
-        mBind.etNickName.postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                InputMethodManager inputManager = (InputMethodManager) mBind.etNickName.getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
-                inputManager.showSoftInput(mBind.etNickName, 0);
-            }
+        mBind.etNickName.postDelayed(() -> {
+            InputMethodManager inputManager = (InputMethodManager) mBind.etNickName.getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
+            inputManager.showSoftInput(mBind.etNickName, 0);
         }, 300);
     }
 
@@ -58,7 +51,6 @@ public class ModifyNameActivity extends BaseActivity<ActivityModifyDeviceNameBin
     protected ActivityModifyDeviceNameBinding getViewBinding() {
         return ActivityModifyDeviceNameBinding.inflate(getLayoutInflater());
     }
-
 
     public void modifyDone(View view) {
         String nickName = mBind.etNickName.getText().toString();

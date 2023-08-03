@@ -54,7 +54,6 @@ public class FilterOtherActivity extends BaseActivity<ActivityFilterOtherBinding
         String mqttConfigAppStr = SPUtiles.getStringValue(this, AppConstants.SP_KEY_MQTT_CONFIG_APP, "");
         appMqttConfig = new Gson().fromJson(mqttConfigAppStr, MQTTConfig.class);
         mMokoDevice = (MokoDevice) getIntent().getSerializableExtra(AppConstants.EXTRA_KEY_DEVICE);
-
         mHandler = new Handler(Looper.getMainLooper());
         showLoadingProgressDialog();
         mHandler.postDelayed(() -> {
@@ -74,8 +73,7 @@ public class FilterOtherActivity extends BaseActivity<ActivityFilterOtherBinding
         // 更新所有设备的网络状态
         final String topic = event.getTopic();
         final String message = event.getMessage();
-        if (TextUtils.isEmpty(message))
-            return;
+        if (TextUtils.isEmpty(message)) return;
         int msg_id;
         try {
             JsonObject object = new Gson().fromJson(message, JsonObject.class);
@@ -89,9 +87,7 @@ public class FilterOtherActivity extends BaseActivity<ActivityFilterOtherBinding
             Type type = new TypeToken<MsgReadResult<FilterOther>>() {
             }.getType();
             MsgReadResult<FilterOther> result = new Gson().fromJson(message, type);
-            if (!mMokoDevice.deviceId.equals(result.device_info.device_id)) {
-                return;
-            }
+            if (!mMokoDevice.deviceId.equals(result.device_info.device_id)) return;
             dismissLoadingProgressDialog();
             mHandler.removeMessages(0);
             mBind.cbOther.setChecked(result.data.onOff == 1);
@@ -148,9 +144,7 @@ public class FilterOtherActivity extends BaseActivity<ActivityFilterOtherBinding
             Type type = new TypeToken<MsgConfigResult>() {
             }.getType();
             MsgConfigResult result = new Gson().fromJson(message, type);
-            if (!mMokoDevice.deviceId.equals(result.device_info.device_id)) {
-                return;
-            }
+            if (!mMokoDevice.deviceId.equals(result.device_info.device_id)) return;
             dismissLoadingProgressDialog();
             mHandler.removeMessages(0);
             if (result.result_code == 0) {
@@ -164,13 +158,9 @@ public class FilterOtherActivity extends BaseActivity<ActivityFilterOtherBinding
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onDeviceOnlineEvent(DeviceOnlineEvent event) {
         String deviceId = event.getDeviceId();
-        if (!mMokoDevice.deviceId.equals(deviceId)) {
-            return;
-        }
+        if (!mMokoDevice.deviceId.equals(deviceId)) return;
         boolean online = event.isOnline();
-        if (!online) {
-            finish();
-        }
+        if (!online) finish();
     }
 
     public void back(View view) {
@@ -178,18 +168,12 @@ public class FilterOtherActivity extends BaseActivity<ActivityFilterOtherBinding
     }
 
     private void getFilterOther() {
-        String appTopic;
-        if (TextUtils.isEmpty(appMqttConfig.topicPublish)) {
-            appTopic = mMokoDevice.topicSubscribe;
-        } else {
-            appTopic = appMqttConfig.topicPublish;
-        }
         MsgDeviceInfo deviceInfo = new MsgDeviceInfo();
         deviceInfo.device_id = mMokoDevice.deviceId;
         deviceInfo.mac = mMokoDevice.mac;
         String message = MQTTMessageAssembler.assembleReadFilterOther(deviceInfo);
         try {
-            MQTTSupport.getInstance().publish(appTopic, message, MQTTConstants.READ_MSG_ID_FILTER_OTHER, appMqttConfig.qos);
+            MQTTSupport.getInstance().publish(getTopic(), message, MQTTConstants.READ_MSG_ID_FILTER_OTHER, appMqttConfig.qos);
         } catch (MqttException e) {
             e.printStackTrace();
         }
@@ -200,8 +184,7 @@ public class FilterOtherActivity extends BaseActivity<ActivityFilterOtherBinding
     }
 
     public void onSave(View view) {
-        if (isWindowLocked())
-            return;
+        if (isWindowLocked()) return;
         if (isValid()) {
             mHandler.postDelayed(() -> {
                 dismissLoadingProgressDialog();
@@ -213,8 +196,7 @@ public class FilterOtherActivity extends BaseActivity<ActivityFilterOtherBinding
     }
 
     public void onAdd(View view) {
-        if (isWindowLocked())
-            return;
+        if (isWindowLocked()) return;
         int count = mBind.llFilterCondition.getChildCount();
         if (count > 2) {
             ToastUtils.showToast(this, "You can set up to 3 filters!");
@@ -251,8 +233,7 @@ public class FilterOtherActivity extends BaseActivity<ActivityFilterOtherBinding
     }
 
     public void onDel(View view) {
-        if (isWindowLocked())
-            return;
+        if (isWindowLocked()) return;
         final int c = mBind.llFilterCondition.getChildCount();
         if (c == 0) {
             ToastUtils.showToast(this, "There are currently no filters to delete");
@@ -285,14 +266,7 @@ public class FilterOtherActivity extends BaseActivity<ActivityFilterOtherBinding
         dialog.show(getSupportFragmentManager());
     }
 
-
     private void saveParams() {
-        String appTopic;
-        if (TextUtils.isEmpty(appMqttConfig.topicPublish)) {
-            appTopic = mMokoDevice.topicSubscribe;
-        } else {
-            appTopic = appMqttConfig.topicPublish;
-        }
         MsgDeviceInfo deviceInfo = new MsgDeviceInfo();
         deviceInfo.device_id = mMokoDevice.deviceId;
         deviceInfo.mac = mMokoDevice.mac;
@@ -313,10 +287,14 @@ public class FilterOtherActivity extends BaseActivity<ActivityFilterOtherBinding
 
         String message = MQTTMessageAssembler.assembleWriteFilterOther(deviceInfo, other);
         try {
-            MQTTSupport.getInstance().publish(appTopic, message, MQTTConstants.CONFIG_MSG_ID_FILTER_OTHER, appMqttConfig.qos);
+            MQTTSupport.getInstance().publish(getTopic(), message, MQTTConstants.CONFIG_MSG_ID_FILTER_OTHER, appMqttConfig.qos);
         } catch (MqttException e) {
             e.printStackTrace();
         }
+    }
+
+    private String getTopic() {
+        return TextUtils.isEmpty(appMqttConfig.topicPublish) ? mMokoDevice.topicSubscribe : appMqttConfig.topicPublish;
     }
 
     private boolean isValid() {
@@ -395,8 +373,7 @@ public class FilterOtherActivity extends BaseActivity<ActivityFilterOtherBinding
     }
 
     public void onOtherRelationship(View view) {
-        if (isWindowLocked())
-            return;
+        if (isWindowLocked()) return;
         BottomDialog dialog = new BottomDialog();
         dialog.setDatas(mValues, mSelected);
         dialog.setListener(value -> {

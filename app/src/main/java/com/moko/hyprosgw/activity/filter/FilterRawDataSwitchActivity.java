@@ -50,7 +50,6 @@ public class FilterRawDataSwitchActivity extends BaseActivity<ActivityFilterRawD
         String mqttConfigAppStr = SPUtiles.getStringValue(this, AppConstants.SP_KEY_MQTT_CONFIG_APP, "");
         appMqttConfig = new Gson().fromJson(mqttConfigAppStr, MQTTConfig.class);
         mMokoDevice = (MokoDevice) getIntent().getSerializableExtra(AppConstants.EXTRA_KEY_DEVICE);
-
         mHandler = new Handler(Looper.getMainLooper());
         showLoadingProgressDialog();
         mHandler.postDelayed(() -> {
@@ -70,8 +69,7 @@ public class FilterRawDataSwitchActivity extends BaseActivity<ActivityFilterRawD
         // 更新所有设备的网络状态
         final String topic = event.getTopic();
         final String message = event.getMessage();
-        if (TextUtils.isEmpty(message))
-            return;
+        if (TextUtils.isEmpty(message)) return;
         int msg_id;
         try {
             JsonObject object = new Gson().fromJson(message, JsonObject.class);
@@ -85,9 +83,7 @@ public class FilterRawDataSwitchActivity extends BaseActivity<ActivityFilterRawD
             Type type = new TypeToken<MsgReadResult<FilterRawDataSwitch>>() {
             }.getType();
             MsgReadResult<FilterRawDataSwitch> result = new Gson().fromJson(message, type);
-            if (!mMokoDevice.deviceId.equals(result.device_info.device_id)) {
-                return;
-            }
+            if (!mMokoDevice.deviceId.equals(result.device_info.device_id)) return;
             dismissLoadingProgressDialog();
             mHandler.removeMessages(0);
             mBind.tvFilterByIbeacon.setText(result.data.ibeacon == 1 ? "ON" : "OFF");
@@ -107,9 +103,7 @@ public class FilterRawDataSwitchActivity extends BaseActivity<ActivityFilterRawD
             Type type = new TypeToken<MsgConfigResult>() {
             }.getType();
             MsgConfigResult result = new Gson().fromJson(message, type);
-            if (!mMokoDevice.deviceId.equals(result.device_info.device_id)) {
-                return;
-            }
+            if (!mMokoDevice.deviceId.equals(result.device_info.device_id)) return;
             if (result.result_code == 0) {
                 getFilterRawDataSwitch();
                 ToastUtils.showToast(this, "Set up succeed");
@@ -124,13 +118,9 @@ public class FilterRawDataSwitchActivity extends BaseActivity<ActivityFilterRawD
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onDeviceOnlineEvent(DeviceOnlineEvent event) {
         String deviceId = event.getDeviceId();
-        if (!mMokoDevice.deviceId.equals(deviceId)) {
-            return;
-        }
+        if (!mMokoDevice.deviceId.equals(deviceId)) return;
         boolean online = event.isOnline();
-        if (!online) {
-            finish();
-        }
+        if (!online) finish();
     }
 
     public void back(View view) {
@@ -138,18 +128,12 @@ public class FilterRawDataSwitchActivity extends BaseActivity<ActivityFilterRawD
     }
 
     private void getFilterRawDataSwitch() {
-        String appTopic;
-        if (TextUtils.isEmpty(appMqttConfig.topicPublish)) {
-            appTopic = mMokoDevice.topicSubscribe;
-        } else {
-            appTopic = appMqttConfig.topicPublish;
-        }
         MsgDeviceInfo deviceInfo = new MsgDeviceInfo();
         deviceInfo.device_id = mMokoDevice.deviceId;
         deviceInfo.mac = mMokoDevice.mac;
         String message = MQTTMessageAssembler.assembleReadFilterRawDataSwitch(deviceInfo);
         try {
-            MQTTSupport.getInstance().publish(appTopic, message, MQTTConstants.READ_MSG_ID_FILTER_RAW_DATA_SWITCH, appMqttConfig.qos);
+            MQTTSupport.getInstance().publish(getTopic(), message, MQTTConstants.READ_MSG_ID_FILTER_RAW_DATA_SWITCH, appMqttConfig.qos);
         } catch (MqttException e) {
             e.printStackTrace();
         }
@@ -160,8 +144,7 @@ public class FilterRawDataSwitchActivity extends BaseActivity<ActivityFilterRawD
     }
 
     public void onFilterByBXPAcc(View view) {
-        if (isWindowLocked())
-            return;
+        if (isWindowLocked()) return;
         mHandler.postDelayed(() -> {
             dismissLoadingProgressDialog();
             ToastUtils.showToast(this, "Set up failed");
@@ -171,8 +154,7 @@ public class FilterRawDataSwitchActivity extends BaseActivity<ActivityFilterRawD
     }
 
     public void onFilterByBXPTH(View view) {
-        if (isWindowLocked())
-            return;
+        if (isWindowLocked()) return;
         mHandler.postDelayed(() -> {
             dismissLoadingProgressDialog();
             ToastUtils.showToast(this, "Set up failed");
@@ -183,12 +165,6 @@ public class FilterRawDataSwitchActivity extends BaseActivity<ActivityFilterRawD
 
     private void setBXPAcc() {
         isBXPAccOpen = !isBXPAccOpen;
-        String appTopic;
-        if (TextUtils.isEmpty(appMqttConfig.topicPublish)) {
-            appTopic = mMokoDevice.topicSubscribe;
-        } else {
-            appTopic = appMqttConfig.topicPublish;
-        }
         MsgDeviceInfo deviceInfo = new MsgDeviceInfo();
         deviceInfo.device_id = mMokoDevice.deviceId;
         deviceInfo.mac = mMokoDevice.mac;
@@ -198,7 +174,7 @@ public class FilterRawDataSwitchActivity extends BaseActivity<ActivityFilterRawD
 
         String message = MQTTMessageAssembler.assembleWriteFilterBXPAcc(deviceInfo, filterSwitch);
         try {
-            MQTTSupport.getInstance().publish(appTopic, message, MQTTConstants.CONFIG_MSG_ID_FILTER_BXP_ACC, appMqttConfig.qos);
+            MQTTSupport.getInstance().publish(getTopic(), message, MQTTConstants.CONFIG_MSG_ID_FILTER_BXP_ACC, appMqttConfig.qos);
         } catch (MqttException e) {
             e.printStackTrace();
         }
@@ -206,12 +182,6 @@ public class FilterRawDataSwitchActivity extends BaseActivity<ActivityFilterRawD
 
     private void setBXPTH() {
         isBXPTHOpen = !isBXPTHOpen;
-        String appTopic;
-        if (TextUtils.isEmpty(appMqttConfig.topicPublish)) {
-            appTopic = mMokoDevice.topicSubscribe;
-        } else {
-            appTopic = appMqttConfig.topicPublish;
-        }
         MsgDeviceInfo deviceInfo = new MsgDeviceInfo();
         deviceInfo.device_id = mMokoDevice.deviceId;
         deviceInfo.mac = mMokoDevice.mac;
@@ -221,15 +191,14 @@ public class FilterRawDataSwitchActivity extends BaseActivity<ActivityFilterRawD
 
         String message = MQTTMessageAssembler.assembleWriteFilterBXPTH(deviceInfo, filterSwitch);
         try {
-            MQTTSupport.getInstance().publish(appTopic, message, MQTTConstants.CONFIG_MSG_ID_FILTER_BXP_TH, appMqttConfig.qos);
+            MQTTSupport.getInstance().publish(getTopic(), message, MQTTConstants.CONFIG_MSG_ID_FILTER_BXP_TH, appMqttConfig.qos);
         } catch (MqttException e) {
             e.printStackTrace();
         }
     }
 
     public void onFilterByIBeacon(View view) {
-        if (isWindowLocked())
-            return;
+        if (isWindowLocked()) return;
         if (!MQTTSupport.getInstance().isConnected()) {
             ToastUtils.showToast(this, R.string.network_error);
             return;
@@ -244,8 +213,7 @@ public class FilterRawDataSwitchActivity extends BaseActivity<ActivityFilterRawD
     }
 
     public void onFilterByUid(View view) {
-        if (isWindowLocked())
-            return;
+        if (isWindowLocked()) return;
         if (!MQTTSupport.getInstance().isConnected()) {
             ToastUtils.showToast(this, R.string.network_error);
             return;
@@ -260,8 +228,7 @@ public class FilterRawDataSwitchActivity extends BaseActivity<ActivityFilterRawD
     }
 
     public void onFilterByUrl(View view) {
-        if (isWindowLocked())
-            return;
+        if (isWindowLocked()) return;
         if (!MQTTSupport.getInstance().isConnected()) {
             ToastUtils.showToast(this, R.string.network_error);
             return;
@@ -276,8 +243,7 @@ public class FilterRawDataSwitchActivity extends BaseActivity<ActivityFilterRawD
     }
 
     public void onFilterByTlm(View view) {
-        if (isWindowLocked())
-            return;
+        if (isWindowLocked()) return;
         if (!MQTTSupport.getInstance().isConnected()) {
             ToastUtils.showToast(this, R.string.network_error);
             return;
@@ -292,8 +258,7 @@ public class FilterRawDataSwitchActivity extends BaseActivity<ActivityFilterRawD
     }
 
     public void onFilterByMKiBeacon(View view) {
-        if (isWindowLocked())
-            return;
+        if (isWindowLocked()) return;
         if (!MQTTSupport.getInstance().isConnected()) {
             ToastUtils.showToast(this, R.string.network_error);
             return;
@@ -308,8 +273,7 @@ public class FilterRawDataSwitchActivity extends BaseActivity<ActivityFilterRawD
     }
 
     public void onFilterByMKiBeaconAcc(View view) {
-        if (isWindowLocked())
-            return;
+        if (isWindowLocked()) return;
         if (!MQTTSupport.getInstance().isConnected()) {
             ToastUtils.showToast(this, R.string.network_error);
             return;
@@ -324,8 +288,7 @@ public class FilterRawDataSwitchActivity extends BaseActivity<ActivityFilterRawD
     }
 
     public void onFilterByOther(View view) {
-        if (isWindowLocked())
-            return;
+        if (isWindowLocked()) return;
         if (!MQTTSupport.getInstance().isConnected()) {
             ToastUtils.showToast(this, R.string.network_error);
             return;
@@ -350,5 +313,9 @@ public class FilterRawDataSwitchActivity extends BaseActivity<ActivityFilterRawD
             }, 30 * 1000);
             getFilterRawDataSwitch();
         }
+    }
+
+    private String getTopic() {
+        return TextUtils.isEmpty(appMqttConfig.topicPublish) ? mMokoDevice.topicSubscribe : appMqttConfig.topicPublish;
     }
 }

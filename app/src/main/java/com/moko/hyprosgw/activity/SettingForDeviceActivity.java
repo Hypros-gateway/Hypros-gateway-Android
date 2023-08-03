@@ -76,9 +76,7 @@ public class SettingForDeviceActivity extends BaseActivity<ActivitySettingForDev
             Type type = new TypeToken<MsgReadResult<ConfigInfo>>() {
             }.getType();
             MsgReadResult<ConfigInfo> result = new Gson().fromJson(message, type);
-            if (!mMokoDevice.deviceId.equals(result.device_info.device_id)) {
-                return;
-            }
+            if (!mMokoDevice.deviceId.equals(result.device_info.device_id)) return;
             dismissLoadingProgressDialog();
             mHandler.removeMessages(0);
             mBind.tvHost.setText(result.data.host);
@@ -104,19 +102,14 @@ public class SettingForDeviceActivity extends BaseActivity<ActivitySettingForDev
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onDeviceOnlineEvent(DeviceOnlineEvent event) {
         String deviceId = event.getDeviceId();
-        if (!mMokoDevice.deviceId.equals(deviceId)) {
-            return;
-        }
+        if (!mMokoDevice.deviceId.equals(deviceId)) return;
         boolean online = event.isOnline();
-        if (!online) {
-            finish();
-        }
+        if (!online) finish();
     }
 
     public void back(View view) {
         finish();
     }
-
 
     private void getSettingForDevice() {
         String appTopic;

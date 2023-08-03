@@ -139,9 +139,7 @@ public class OTAActivity extends BaseActivity<ActivityOtaBinding> implements Mok
             Type type = new TypeToken<MsgNotify<OTAResult>>() {
             }.getType();
             MsgNotify<OTAResult> result = new Gson().fromJson(message, type);
-            if (!mMokoDevice.deviceId.equals(result.device_info.device_id)) {
-                return;
-            }
+            if (!mMokoDevice.deviceId.equals(result.device_info.device_id)) return;
             dismissLoadingProgressDialog();
             if (result.data.ota_result == 1) {
                 ToastUtils.showToast(this, R.string.update_success);
@@ -158,9 +156,7 @@ public class OTAActivity extends BaseActivity<ActivityOtaBinding> implements Mok
             Type type = new TypeToken<MsgReadResult<SlaveDeviceInfo>>() {
             }.getType();
             MsgReadResult<SlaveDeviceInfo> result = new Gson().fromJson(message, type);
-            if (!mMokoDevice.deviceId.equals(result.device_info.device_id)) {
-                return;
-            }
+            if (!mMokoDevice.deviceId.equals(result.device_info.device_id)) return;
             dismissLoadingProgressDialog();
             mHandler.removeMessages(0);
             StringBuffer stringBuffer = new StringBuffer(result.data.slave_mac);
@@ -178,9 +174,7 @@ public class OTAActivity extends BaseActivity<ActivityOtaBinding> implements Mok
             Type type = new TypeToken<MsgConfigResult<OTAState>>() {
             }.getType();
             MsgConfigResult<OTAState> result = new Gson().fromJson(message, type);
-            if (!mMokoDevice.deviceId.equals(result.device_info.device_id)) {
-                return;
-            }
+            if (!mMokoDevice.deviceId.equals(result.device_info.device_id)) return;
             mHandler.removeMessages(0);
             if (result.result_code == 0) {
                 if (result.data.ota_state != 0) {
@@ -196,9 +190,7 @@ public class OTAActivity extends BaseActivity<ActivityOtaBinding> implements Mok
             Type type = new TypeToken<MsgConfigResult>() {
             }.getType();
             MsgConfigResult result = new Gson().fromJson(message, type);
-            if (!mMokoDevice.deviceId.equals(result.device_info.device_id)) {
-                return;
-            }
+            if (!mMokoDevice.deviceId.equals(result.device_info.device_id)) return;
             if (result.result_code == 0) {
                 // 获取MAC地址后开始搜索设备
                 getSlaveMac();
@@ -213,13 +205,9 @@ public class OTAActivity extends BaseActivity<ActivityOtaBinding> implements Mok
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onDeviceOnlineEvent(DeviceOnlineEvent event) {
         String deviceId = event.getDeviceId();
-        if (!mMokoDevice.deviceId.equals(deviceId)) {
-            return;
-        }
+        if (!mMokoDevice.deviceId.equals(deviceId)) return;
         boolean online = event.isOnline();
-        if (!online) {
-            finish();
-        }
+        if (!online) finish();
     }
 
     public void back(View view) {
@@ -227,8 +215,7 @@ public class OTAActivity extends BaseActivity<ActivityOtaBinding> implements Mok
     }
 
     public void startUpdate(View view) {
-        if (isWindowLocked())
-            return;
+        if (isWindowLocked()) return;
         if (!MQTTSupport.getInstance().isConnected()) {
             ToastUtils.showToast(this, R.string.network_error);
             return;
@@ -359,12 +346,6 @@ public class OTAActivity extends BaseActivity<ActivityOtaBinding> implements Mok
         String hostStr = mBind.etMasterHost.getText().toString();
         String portStr = mBind.etMasterPort.getText().toString();
         String masterStr = mBind.etMasterFilePath.getText().toString();
-        String appTopic;
-        if (TextUtils.isEmpty(appMqttConfig.topicPublish)) {
-            appTopic = mMokoDevice.topicSubscribe;
-        } else {
-            appTopic = appMqttConfig.topicPublish;
-        }
         MsgDeviceInfo deviceInfo = new MsgDeviceInfo();
         deviceInfo.device_id = mMokoDevice.deviceId;
         deviceInfo.mac = mMokoDevice.mac;
@@ -374,45 +355,31 @@ public class OTAActivity extends BaseActivity<ActivityOtaBinding> implements Mok
         params.firmware_way = masterStr;
         String message = MQTTMessageAssembler.assembleWriteOTAMaster(deviceInfo, params);
         try {
-            MQTTSupport.getInstance().publish(appTopic, message, MQTTConstants.CONFIG_MSG_ID_OTA_MASTER, appMqttConfig.qos);
+            MQTTSupport.getInstance().publish(getTopic(), message, MQTTConstants.CONFIG_MSG_ID_OTA_MASTER, appMqttConfig.qos);
         } catch (MqttException e) {
             e.printStackTrace();
         }
     }
 
-
     private void setOTASlave() {
-        String appTopic;
-        if (TextUtils.isEmpty(appMqttConfig.topicPublish)) {
-            appTopic = mMokoDevice.topicSubscribe;
-        } else {
-            appTopic = appMqttConfig.topicPublish;
-        }
         MsgDeviceInfo deviceInfo = new MsgDeviceInfo();
         deviceInfo.device_id = mMokoDevice.deviceId;
         deviceInfo.mac = mMokoDevice.mac;
         String message = MQTTMessageAssembler.assembleWriteOTASlave(deviceInfo);
         try {
-            MQTTSupport.getInstance().publish(appTopic, message, MQTTConstants.CONFIG_MSG_ID_OTA_SLAVE, appMqttConfig.qos);
+            MQTTSupport.getInstance().publish(getTopic(), message, MQTTConstants.CONFIG_MSG_ID_OTA_SLAVE, appMqttConfig.qos);
         } catch (MqttException e) {
             e.printStackTrace();
         }
     }
 
-
     private void getSlaveMac() {
-        String appTopic;
-        if (TextUtils.isEmpty(appMqttConfig.topicPublish)) {
-            appTopic = mMokoDevice.topicSubscribe;
-        } else {
-            appTopic = appMqttConfig.topicPublish;
-        }
         MsgDeviceInfo deviceInfo = new MsgDeviceInfo();
         deviceInfo.device_id = mMokoDevice.deviceId;
         deviceInfo.mac = mMokoDevice.mac;
         String message = MQTTMessageAssembler.assembleReadSlaveDeviceInfo(deviceInfo);
         try {
-            MQTTSupport.getInstance().publish(appTopic, message, MQTTConstants.READ_MSG_ID_SLAVE_DEVICE_INFO, appMqttConfig.qos);
+            MQTTSupport.getInstance().publish(getTopic(), message, MQTTConstants.READ_MSG_ID_SLAVE_DEVICE_INFO, appMqttConfig.qos);
         } catch (MqttException e) {
             e.printStackTrace();
         }
@@ -422,12 +389,6 @@ public class OTAActivity extends BaseActivity<ActivityOtaBinding> implements Mok
         String hostStr = mBind.etOneWayHost.getText().toString();
         String portStr = mBind.etOneWayPort.getText().toString();
         String oneWayStr = mBind.etOneWayCaFilePath.getText().toString();
-        String appTopic;
-        if (TextUtils.isEmpty(appMqttConfig.topicPublish)) {
-            appTopic = mMokoDevice.topicSubscribe;
-        } else {
-            appTopic = appMqttConfig.topicPublish;
-        }
         MsgDeviceInfo deviceInfo = new MsgDeviceInfo();
         deviceInfo.device_id = mMokoDevice.deviceId;
         deviceInfo.mac = mMokoDevice.mac;
@@ -437,12 +398,11 @@ public class OTAActivity extends BaseActivity<ActivityOtaBinding> implements Mok
         params.ca_way = oneWayStr;
         String message = MQTTMessageAssembler.assembleWriteOTAOneWay(deviceInfo, params);
         try {
-            MQTTSupport.getInstance().publish(appTopic, message, MQTTConstants.CONFIG_MSG_ID_OTA_ONE_WAY, appMqttConfig.qos);
+            MQTTSupport.getInstance().publish(getTopic(), message, MQTTConstants.CONFIG_MSG_ID_OTA_ONE_WAY, appMqttConfig.qos);
         } catch (MqttException e) {
             e.printStackTrace();
         }
     }
-
 
     private void setOTABothWay() {
         String hostStr = mBind.etBothWayHost.getText().toString();
@@ -450,12 +410,6 @@ public class OTAActivity extends BaseActivity<ActivityOtaBinding> implements Mok
         String bothWayCaStr = mBind.etBothWayCaFilePath.getText().toString();
         String bothWayClientKeyStr = mBind.etBothWayClientKeyFilePath.getText().toString();
         String bothWayClientCertStr = mBind.etBothWayClientCertFilePath.getText().toString();
-        String appTopic;
-        if (TextUtils.isEmpty(appMqttConfig.topicPublish)) {
-            appTopic = mMokoDevice.topicSubscribe;
-        } else {
-            appTopic = appMqttConfig.topicPublish;
-        }
         MsgDeviceInfo deviceInfo = new MsgDeviceInfo();
         deviceInfo.device_id = mMokoDevice.deviceId;
         deviceInfo.mac = mMokoDevice.mac;
@@ -467,12 +421,15 @@ public class OTAActivity extends BaseActivity<ActivityOtaBinding> implements Mok
         params.client_key_way = bothWayClientKeyStr;
         String message = MQTTMessageAssembler.assembleWriteOTABothWay(deviceInfo, params);
         try {
-            MQTTSupport.getInstance().publish(appTopic, message, MQTTConstants.CONFIG_MSG_ID_OTA_BOTH_WAY, appMqttConfig.qos);
+            MQTTSupport.getInstance().publish(getTopic(), message, MQTTConstants.CONFIG_MSG_ID_OTA_BOTH_WAY, appMqttConfig.qos);
         } catch (MqttException e) {
             e.printStackTrace();
         }
     }
 
+    private String getTopic() {
+        return TextUtils.isEmpty(appMqttConfig.topicPublish) ? mMokoDevice.topicSubscribe : appMqttConfig.topicPublish;
+    }
 
     public void openSlaveFirmwareFile(View view) {
         if (isWindowLocked())
@@ -492,8 +449,7 @@ public class OTAActivity extends BaseActivity<ActivityOtaBinding> implements Mok
     @Override
     public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if (resultCode != RESULT_OK)
-            return;
+        if (resultCode != RESULT_OK) return;
         //得到uri，后面就是将uri转化成file的过程。
         Uri uri = data.getData();
         String filePath = FileUtils.getPath(this, uri);
@@ -512,7 +468,6 @@ public class OTAActivity extends BaseActivity<ActivityOtaBinding> implements Mok
         }
     }
 
-
     private void startScan() {
         showLoadingProgressDialog();
         mokoBleScanner.startScanDevice(this);
@@ -521,7 +476,6 @@ public class OTAActivity extends BaseActivity<ActivityOtaBinding> implements Mok
             mokoBleScanner.stopScanDevice();
         }, 1000 * 20);
     }
-
 
     @Override
     public void onStartScan() {

@@ -152,20 +152,17 @@ public class AdvertiseIBeaconActivity extends BaseActivity<ActivityAdvertiseIbea
             Type type = new TypeToken<MsgReadResult<IBeaconEnable>>() {
             }.getType();
             MsgReadResult<IBeaconEnable> result = new Gson().fromJson(message, type);
-            if (!mMokoDevice.deviceId.equals(result.device_info.device_id)) {
-                return;
-            }
+            if (!mMokoDevice.deviceId.equals(result.device_info.device_id)) return;
             int enable = result.data.ibeacon_enable;
             mBind.cbAdvertiseBeacon.setChecked(enable == 1);
+            mBind.group.setVisibility(enable == 1 ? View.VISIBLE : View.GONE);
             getBeaconAdvParams();
         }
         if (msg_id == MQTTConstants.READ_MSG_ID_BEACON_ADV_PARAMS) {
             Type type = new TypeToken<MsgReadResult<IBeaconAdvParams>>() {
             }.getType();
             MsgReadResult<IBeaconAdvParams> result = new Gson().fromJson(message, type);
-            if (!mMokoDevice.deviceId.equals(result.device_info.device_id)) {
-                return;
-            }
+            if (!mMokoDevice.deviceId.equals(result.device_info.device_id)) return;
             dismissLoadingProgressDialog();
             mHandler.removeMessages(0);
             mBind.etMajor.setText(String.valueOf(result.data.major));
@@ -188,9 +185,7 @@ public class AdvertiseIBeaconActivity extends BaseActivity<ActivityAdvertiseIbea
             Type type = new TypeToken<MsgConfigResult>() {
             }.getType();
             MsgConfigResult result = new Gson().fromJson(message, type);
-            if (!mMokoDevice.deviceId.equals(result.device_info.device_id)) {
-                return;
-            }
+            if (!mMokoDevice.deviceId.equals(result.device_info.device_id)) return;
             if (result.result_code == 0) {
                 if (mBind.cbAdvertiseBeacon.isChecked()) {
                     setBeaconAdvParams();
@@ -209,9 +204,7 @@ public class AdvertiseIBeaconActivity extends BaseActivity<ActivityAdvertiseIbea
             Type type = new TypeToken<MsgConfigResult>() {
             }.getType();
             MsgConfigResult result = new Gson().fromJson(message, type);
-            if (!mMokoDevice.deviceId.equals(result.device_info.device_id)) {
-                return;
-            }
+            if (!mMokoDevice.deviceId.equals(result.device_info.device_id)) return;
             dismissLoadingProgressDialog();
             mHandler.removeMessages(0);
             if (result.result_code == 0) {

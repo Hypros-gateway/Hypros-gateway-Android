@@ -204,11 +204,6 @@ public class SetAppMQTTActivity extends BaseActivity<ActivityMqttAppBinding> imp
         mqttConfig.clientKeyPath = sslFragment.getClientKeyPath();
         mqttConfig.clientCertPath = sslFragment.getClientCertPath();
 
-        if (!mqttConfig.topicPublish.isEmpty() && !mqttConfig.topicSubscribe.isEmpty()
-                && mqttConfig.topicPublish.equals(mqttConfig.topicSubscribe)) {
-            ToastUtils.showToast(this, "Subscribed and published topic can't be same !");
-            return;
-        }
         String mqttConfigStr = new Gson().toJson(mqttConfig, MQTTConfig.class);
         MQTTSupport.getInstance().disconnectMqtt();
         showLoadingProgressDialog();

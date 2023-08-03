@@ -62,8 +62,7 @@ public class FilterIBeaconActivity extends BaseActivity<ActivityFilterIbeaconBin
         // 更新所有设备的网络状态
         final String topic = event.getTopic();
         final String message = event.getMessage();
-        if (TextUtils.isEmpty(message))
-            return;
+        if (TextUtils.isEmpty(message)) return;
         int msg_id;
         try {
             JsonObject object = new Gson().fromJson(message, JsonObject.class);
@@ -77,9 +76,7 @@ public class FilterIBeaconActivity extends BaseActivity<ActivityFilterIbeaconBin
             Type type = new TypeToken<MsgReadResult<FilterIBeacon>>() {
             }.getType();
             MsgReadResult<FilterIBeacon> result = new Gson().fromJson(message, type);
-            if (!mMokoDevice.deviceId.equals(result.device_info.device_id)) {
-                return;
-            }
+            if (!mMokoDevice.deviceId.equals(result.device_info.device_id)) return;
             dismissLoadingProgressDialog();
             mHandler.removeMessages(0);
             mBind.cbIbeacon.setChecked(result.data.onOff == 1);
@@ -93,9 +90,7 @@ public class FilterIBeaconActivity extends BaseActivity<ActivityFilterIbeaconBin
             Type type = new TypeToken<MsgConfigResult>() {
             }.getType();
             MsgConfigResult result = new Gson().fromJson(message, type);
-            if (!mMokoDevice.deviceId.equals(result.device_info.device_id)) {
-                return;
-            }
+            if (!mMokoDevice.deviceId.equals(result.device_info.device_id)) return;
             dismissLoadingProgressDialog();
             mHandler.removeMessages(0);
             if (result.result_code == 0) {
@@ -109,13 +104,9 @@ public class FilterIBeaconActivity extends BaseActivity<ActivityFilterIbeaconBin
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onDeviceOnlineEvent(DeviceOnlineEvent event) {
         String deviceId = event.getDeviceId();
-        if (!mMokoDevice.deviceId.equals(deviceId)) {
-            return;
-        }
+        if (!mMokoDevice.deviceId.equals(deviceId)) return;
         boolean online = event.isOnline();
-        if (!online) {
-            finish();
-        }
+        if (!online) finish();
     }
 
     public void back(View view) {
@@ -123,18 +114,12 @@ public class FilterIBeaconActivity extends BaseActivity<ActivityFilterIbeaconBin
     }
 
     private void getFilterIBeacon() {
-        String appTopic;
-        if (TextUtils.isEmpty(appMqttConfig.topicPublish)) {
-            appTopic = mMokoDevice.topicSubscribe;
-        } else {
-            appTopic = appMqttConfig.topicPublish;
-        }
         MsgDeviceInfo deviceInfo = new MsgDeviceInfo();
         deviceInfo.device_id = mMokoDevice.deviceId;
         deviceInfo.mac = mMokoDevice.mac;
         String message = MQTTMessageAssembler.assembleReadFilterIBeacon(deviceInfo);
         try {
-            MQTTSupport.getInstance().publish(appTopic, message, MQTTConstants.READ_MSG_ID_FILTER_IBEACON, appMqttConfig.qos);
+            MQTTSupport.getInstance().publish(getTopic(), message, MQTTConstants.READ_MSG_ID_FILTER_IBEACON, appMqttConfig.qos);
         } catch (MqttException e) {
             e.printStackTrace();
         }
@@ -145,8 +130,7 @@ public class FilterIBeaconActivity extends BaseActivity<ActivityFilterIbeaconBin
     }
 
     public void onSave(View view) {
-        if (isWindowLocked())
-            return;
+        if (isWindowLocked()) return;
         if (isValid()) {
             mHandler.postDelayed(() -> {
                 dismissLoadingProgressDialog();
@@ -157,14 +141,7 @@ public class FilterIBeaconActivity extends BaseActivity<ActivityFilterIbeaconBin
         }
     }
 
-
     private void saveParams() {
-        String appTopic;
-        if (TextUtils.isEmpty(appMqttConfig.topicPublish)) {
-            appTopic = mMokoDevice.topicSubscribe;
-        } else {
-            appTopic = appMqttConfig.topicPublish;
-        }
         MsgDeviceInfo deviceInfo = new MsgDeviceInfo();
         deviceInfo.device_id = mMokoDevice.deviceId;
         deviceInfo.mac = mMokoDevice.mac;
@@ -179,10 +156,14 @@ public class FilterIBeaconActivity extends BaseActivity<ActivityFilterIbeaconBin
 
         String message = MQTTMessageAssembler.assembleWriteFilterIBeacon(deviceInfo, filterIBeacon);
         try {
-            MQTTSupport.getInstance().publish(appTopic, message, MQTTConstants.CONFIG_MSG_ID_FILTER_IBEACON, appMqttConfig.qos);
+            MQTTSupport.getInstance().publish(getTopic(), message, MQTTConstants.CONFIG_MSG_ID_FILTER_IBEACON, appMqttConfig.qos);
         } catch (MqttException e) {
             e.printStackTrace();
         }
+    }
+
+    private String getTopic() {
+        return TextUtils.isEmpty(appMqttConfig.topicPublish) ? mMokoDevice.topicSubscribe : appMqttConfig.topicPublish;
     }
 
     private boolean isValid() {

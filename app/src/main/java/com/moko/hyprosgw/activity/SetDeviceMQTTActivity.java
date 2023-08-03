@@ -14,6 +14,7 @@ import androidx.annotation.IdRes;
 import androidx.fragment.app.Fragment;
 import androidx.viewpager2.widget.ViewPager2;
 
+import com.elvishew.xlog.XLog;
 import com.github.lzyzsd.circleprogress.DonutProgress;
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;

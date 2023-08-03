@@ -153,7 +153,7 @@ public class DeviceScannerActivity extends BaseActivity<ActivityScannerBinding> 
         animation = AnimationUtils.loadAnimation(this, R.anim.rotate_refresh);
         mBind.ivRefresh.startAnimation(animation);
         mokoBleScanner.startScanDevice(this);
-        mHandler.postDelayed(() -> mokoBleScanner.stopScanDevice(), 1000 * 10);
+        mHandler.postDelayed(() -> mokoBleScanner.stopScanDevice(), 1000 * 60);
     }
 
     @Override

@@ -34,11 +34,8 @@ import org.greenrobot.eventbus.ThreadMode;
 import java.lang.reflect.Type;
 
 public class DataReportTimeoutActivity extends BaseActivity<ActivityDataReportTimeoutBinding> {
-
-
     private MokoDevice mMokoDevice;
     private MQTTConfig appMqttConfig;
-
     public Handler mHandler;
 
     @Override
@@ -65,8 +62,7 @@ public class DataReportTimeoutActivity extends BaseActivity<ActivityDataReportTi
         // 更新所有设备的网络状态
         final String topic = event.getTopic();
         final String message = event.getMessage();
-        if (TextUtils.isEmpty(message))
-            return;
+        if (TextUtils.isEmpty(message)) return;
         int msg_id;
         try {
             JsonObject object = new Gson().fromJson(message, JsonObject.class);
@@ -80,9 +76,7 @@ public class DataReportTimeoutActivity extends BaseActivity<ActivityDataReportTi
             Type type = new TypeToken<MsgReadResult<DataReportTimeout>>() {
             }.getType();
             MsgReadResult<DataReportTimeout> result = new Gson().fromJson(message, type);
-            if (!mMokoDevice.deviceId.equals(result.device_info.device_id)) {
-                return;
-            }
+            if (!mMokoDevice.deviceId.equals(result.device_info.device_id)) return;
             dismissLoadingProgressDialog();
             mHandler.removeMessages(0);
             mBind.etReportTimeout.setText(String.valueOf(result.data.timeout / 50));
@@ -91,9 +85,7 @@ public class DataReportTimeoutActivity extends BaseActivity<ActivityDataReportTi
             Type type = new TypeToken<MsgConfigResult>() {
             }.getType();
             MsgConfigResult result = new Gson().fromJson(message, type);
-            if (!mMokoDevice.deviceId.equals(result.device_info.device_id)) {
-                return;
-            }
+            if (!mMokoDevice.deviceId.equals(result.device_info.device_id)) return;
             dismissLoadingProgressDialog();
             mHandler.removeMessages(0);
             if (result.result_code == 0) {
@@ -107,13 +99,9 @@ public class DataReportTimeoutActivity extends BaseActivity<ActivityDataReportTi
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onDeviceOnlineEvent(DeviceOnlineEvent event) {
         String deviceId = event.getDeviceId();
-        if (!mMokoDevice.deviceId.equals(deviceId)) {
-            return;
-        }
+        if (!mMokoDevice.deviceId.equals(deviceId)) return;
         boolean online = event.isOnline();
-        if (!online) {
-            finish();
-        }
+        if (!online) finish();
     }
 
     public void back(View view) {
@@ -121,12 +109,6 @@ public class DataReportTimeoutActivity extends BaseActivity<ActivityDataReportTi
     }
 
     private void setDataReportTimeout(int timeout) {
-        String appTopic;
-        if (TextUtils.isEmpty(appMqttConfig.topicPublish)) {
-            appTopic = mMokoDevice.topicSubscribe;
-        } else {
-            appTopic = appMqttConfig.topicPublish;
-        }
         MsgDeviceInfo deviceInfo = new MsgDeviceInfo();
         deviceInfo.device_id = mMokoDevice.deviceId;
         deviceInfo.mac = mMokoDevice.mac;
@@ -134,34 +116,26 @@ public class DataReportTimeoutActivity extends BaseActivity<ActivityDataReportTi
         reportTimeout.timeout = timeout * 50;
         String message = MQTTMessageAssembler.assembleWriteDataReportTimeout(deviceInfo, reportTimeout);
         try {
-            MQTTSupport.getInstance().publish(appTopic, message, MQTTConstants.CONFIG_MSG_ID_DATA_REPORT_TIMEOUT, appMqttConfig.qos);
+            MQTTSupport.getInstance().publish(getTopic(), message, MQTTConstants.CONFIG_MSG_ID_DATA_REPORT_TIMEOUT, appMqttConfig.qos);
         } catch (MqttException e) {
             e.printStackTrace();
         }
     }
 
-
     private void getDataReportTimeout() {
-        String appTopic;
-        if (TextUtils.isEmpty(appMqttConfig.topicPublish)) {
-            appTopic = mMokoDevice.topicSubscribe;
-        } else {
-            appTopic = appMqttConfig.topicPublish;
-        }
         MsgDeviceInfo deviceInfo = new MsgDeviceInfo();
         deviceInfo.device_id = mMokoDevice.deviceId;
         deviceInfo.mac = mMokoDevice.mac;
         String message = MQTTMessageAssembler.assembleReadDataReportTimeout(deviceInfo);
         try {
-            MQTTSupport.getInstance().publish(appTopic, message, MQTTConstants.READ_MSG_ID_DATA_REPORT_TIMEOUT, appMqttConfig.qos);
+            MQTTSupport.getInstance().publish(getTopic(), message, MQTTConstants.READ_MSG_ID_DATA_REPORT_TIMEOUT, appMqttConfig.qos);
         } catch (MqttException e) {
             e.printStackTrace();
         }
     }
 
     public void onConfirm(View view) {
-        if (isWindowLocked())
-            return;
+        if (isWindowLocked()) return;
         String timeoutStr = mBind.etReportTimeout.getText().toString();
         if (!MQTTSupport.getInstance().isConnected()) {
             ToastUtils.showToast(this, R.string.network_error);
@@ -186,5 +160,9 @@ public class DataReportTimeoutActivity extends BaseActivity<ActivityDataReportTi
         }, 30 * 1000);
         showLoadingProgressDialog();
         setDataReportTimeout(timeout);
+    }
+
+    private String getTopic() {
+        return TextUtils.isEmpty(appMqttConfig.topicPublish) ? mMokoDevice.topicSubscribe : appMqttConfig.topicPublish;
     }
 }

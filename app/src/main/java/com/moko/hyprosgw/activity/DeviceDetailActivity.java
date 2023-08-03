@@ -91,8 +91,7 @@ public class DeviceDetailActivity extends BaseActivity<ActivityDetailBinding> {
         // 更新所有设备的网络状态
         final String topic = event.getTopic();
         final String message = event.getMessage();
-        if (TextUtils.isEmpty(message))
-            return;
+        if (TextUtils.isEmpty(message)) return;
         int msg_id;
         try {
             JsonObject object = new Gson().fromJson(message, JsonObject.class);
@@ -106,9 +105,7 @@ public class DeviceDetailActivity extends BaseActivity<ActivityDetailBinding> {
             Type type = new TypeToken<MsgReadResult<ScanConfig>>() {
             }.getType();
             MsgReadResult<ScanConfig> result = new Gson().fromJson(message, type);
-            if (!mMokoDevice.deviceId.equals(result.device_info.device_id)) {
-                return;
-            }
+            if (!mMokoDevice.deviceId.equals(result.device_info.device_id))return;
             dismissLoadingProgressDialog();
             mHandler.removeMessages(0);
             mScanSwitch = result.data.scan_switch == 1;
@@ -120,9 +117,7 @@ public class DeviceDetailActivity extends BaseActivity<ActivityDetailBinding> {
             Type type = new TypeToken<MsgNotify<List<JsonObject>>>() {
             }.getType();
             MsgNotify<List<JsonObject>> result = new Gson().fromJson(message, type);
-            if (!mMokoDevice.deviceId.equals(result.device_info.device_id)) {
-                return;
-            }
+            if (!mMokoDevice.deviceId.equals(result.device_info.device_id)) return;
             for (JsonObject jsonObject : result.data) {
                 mScanDevices.add(0, jsonObject.toString());
             }
@@ -133,9 +128,7 @@ public class DeviceDetailActivity extends BaseActivity<ActivityDetailBinding> {
             Type type = new TypeToken<MsgConfigResult>() {
             }.getType();
             MsgConfigResult result = new Gson().fromJson(message, type);
-            if (!mMokoDevice.deviceId.equals(result.device_info.device_id)) {
-                return;
-            }
+            if (!mMokoDevice.deviceId.equals(result.device_info.device_id)) return;
             dismissLoadingProgressDialog();
             mHandler.removeMessages(0);
             if (result.result_code == 0) {
@@ -157,9 +150,7 @@ public class DeviceDetailActivity extends BaseActivity<ActivityDetailBinding> {
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onDeviceOnlineEvent(DeviceOnlineEvent event) {
         String deviceId = event.getDeviceId();
-        if (!mMokoDevice.deviceId.equals(deviceId)) {
-            return;
-        }
+        if (!mMokoDevice.deviceId.equals(deviceId)) return;
         boolean online = event.isOnline();
         if (!online) {
             ToastUtils.showToast(this, "device is off-line");
@@ -179,8 +170,7 @@ public class DeviceDetailActivity extends BaseActivity<ActivityDetailBinding> {
     }
 
     public void onScannerOptionSetting(View view) {
-        if (isWindowLocked())
-            return;
+        if (isWindowLocked()) return;
         // 获取扫描过滤
         if (!MQTTSupport.getInstance().isConnected()) {
             ToastUtils.showToast(this, R.string.network_error);
@@ -196,8 +186,7 @@ public class DeviceDetailActivity extends BaseActivity<ActivityDetailBinding> {
     }
 
     public void onScanSwitch(View view) {
-        if (isWindowLocked())
-            return;
+        if (isWindowLocked()) return;
         // 切换扫描开关
         if (!MQTTSupport.getInstance().isConnected()) {
             ToastUtils.showToast(this, R.string.network_error);
@@ -226,8 +215,7 @@ public class DeviceDetailActivity extends BaseActivity<ActivityDetailBinding> {
     }
 
     public void onSaveScanTime(View view) {
-        if (isWindowLocked())
-            return;
+        if (isWindowLocked()) return;
         // 设置扫描间隔
         if (!MQTTSupport.getInstance().isConnected()) {
             ToastUtils.showToast(this, R.string.network_error);
@@ -255,32 +243,19 @@ public class DeviceDetailActivity extends BaseActivity<ActivityDetailBinding> {
         setScanConfig();
     }
 
-
     private void getScanConfig() {
-        String appTopic;
-        if (TextUtils.isEmpty(appMqttConfig.topicPublish)) {
-            appTopic = mMokoDevice.topicSubscribe;
-        } else {
-            appTopic = appMqttConfig.topicPublish;
-        }
         MsgDeviceInfo deviceInfo = new MsgDeviceInfo();
         deviceInfo.device_id = mMokoDevice.deviceId;
         deviceInfo.mac = mMokoDevice.mac;
         String message = MQTTMessageAssembler.assembleReadScanConfig(deviceInfo);
         try {
-            MQTTSupport.getInstance().publish(appTopic, message, MQTTConstants.READ_MSG_ID_SCAN_CONFIG, appMqttConfig.qos);
+            MQTTSupport.getInstance().publish(getTopic(), message, MQTTConstants.READ_MSG_ID_SCAN_CONFIG, appMqttConfig.qos);
         } catch (MqttException e) {
             e.printStackTrace();
         }
     }
 
     private void setScanConfig() {
-        String appTopic;
-        if (TextUtils.isEmpty(appMqttConfig.topicPublish)) {
-            appTopic = mMokoDevice.topicSubscribe;
-        } else {
-            appTopic = appMqttConfig.topicPublish;
-        }
         MsgDeviceInfo deviceInfo = new MsgDeviceInfo();
         deviceInfo.device_id = mMokoDevice.deviceId;
         deviceInfo.mac = mMokoDevice.mac;
@@ -289,9 +264,13 @@ public class DeviceDetailActivity extends BaseActivity<ActivityDetailBinding> {
         scanConfig.scan_time = mScanInterval;
         String message = MQTTMessageAssembler.assembleWriteScanConfig(deviceInfo, scanConfig);
         try {
-            MQTTSupport.getInstance().publish(appTopic, message, MQTTConstants.CONFIG_MSG_ID_SCAN_CONFIG, appMqttConfig.qos);
+            MQTTSupport.getInstance().publish(getTopic(), message, MQTTConstants.CONFIG_MSG_ID_SCAN_CONFIG, appMqttConfig.qos);
         } catch (MqttException e) {
             e.printStackTrace();
         }
+    }
+
+    private String getTopic() {
+        return TextUtils.isEmpty(appMqttConfig.topicPublish) ? mMokoDevice.topicSubscribe : appMqttConfig.topicPublish;
     }
 }

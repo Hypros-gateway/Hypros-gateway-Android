@@ -9,6 +9,8 @@ import android.view.View;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 
+import androidx.recyclerview.widget.LinearLayoutManager;
+
 import com.chad.library.adapter.base.BaseQuickAdapter;
 import com.elvishew.xlog.XLog;
 import com.moko.ble.lib.MokoConstants;
@@ -40,8 +42,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-
-import androidx.recyclerview.widget.LinearLayoutManager;
 
 import no.nordicsemi.android.support.v18.scanner.ScanRecord;
 import no.nordicsemi.android.support.v18.scanner.ScanResult;
@@ -266,8 +266,7 @@ public class DeviceScannerActivity extends BaseActivity<ActivityScannerBinding> 
                     int header = value[0] & 0xFF;// 0xED
                     int flag = value[1] & 0xFF;// read or write
                     int cmd = value[2] & 0xFF;
-                    if (header != 0xED)
-                        return;
+                    if (header != 0xED) return;
                     int length = value[3] & 0xFF;
                     if (flag == 0x01 && cmd == 0x01 && length == 0x01) {
                         int result = value[4] & 0xFF;

@@ -139,6 +139,7 @@ public class MQTTSupport {
             } else {
                 uri = "tcp://" + mqttConfig.host + ":" + mqttConfig.port;
             }
+            XLog.i("333333config="+mqttAppConfigStr);
             mqttAndroidClient = new MqttAndroidClient(mContext, uri, mqttConfig.clientId, Ack.AUTO_ACK);
             mqttAndroidClient.setCallback(new MqttCallbackExtended() {
                 @Override

@@ -177,9 +177,7 @@
                 android:layout_height="50dp"
                 android:background="@color/white_ffffff"
                 android:clickable="true"
-                android:onClick="onModifyMqttSettings"
-                android:visibility="gone"
-                tools:visibility="visible">
+                android:onClick="onModifyMqttSettings">
 
                 <TextView
                     android:layout_width="match_parent"

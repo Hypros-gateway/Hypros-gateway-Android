@@ -386,7 +386,7 @@ public class ScannerMainActivity extends BaseActivity<ActivityMainScannerBinding
         if (resultCode != RESULT_OK) return;
         if (requestCode == AppConstants.REQUEST_CODE_MQTT_CONFIG_APP && null != data) {
             MQTTAppConfigStr = data.getStringExtra(AppConstants.EXTRA_KEY_MQTT_CONFIG_APP);
-            mBind.tvTitle.setText(getString(R.string.app_name));
+            mBind.tvTitle.setText("MKScannerPro");
             // 订阅所有设备的Topic
             subscribeAllDevices();
         }

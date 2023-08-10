@@ -17,7 +17,7 @@ android {
         versionCode 100
         versionName "1.0.0"
         def formatDate = new Date().format("yyyyMMddHHmm")
-        setProperty("archivesBaseName", "MKScannerGW_${versionName}_${formatDate}")
+        setProperty("archivesBaseName", "HyprosGW_${versionName}_${formatDate}")
     }
 
     buildTypes {

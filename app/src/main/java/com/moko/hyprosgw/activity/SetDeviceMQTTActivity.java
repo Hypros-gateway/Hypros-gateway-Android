@@ -461,8 +461,8 @@ public class SetDeviceMQTTActivity extends BaseActivity<ActivityMqttDeviceBindin
         String port = mBind.etMqttPort.getText().toString();
         String clientId = mBind.etMqttClientId.getText().toString().replaceAll(" ", "");
         String deviceId = mBind.etDeviceId.getText().toString().replaceAll(" ", "");
-        String topicSubscribe = mBind.etMqttSubscribeTopic.getText().toString().replaceAll(" ", "");
-        String topicPublish = mBind.etMqttPublishTopic.getText().toString().replaceAll(" ", "");
+        String topicSubscribe = mBind.etMqttSubscribeTopic.getText().toString();
+        String topicPublish = mBind.etMqttPublishTopic.getText().toString();
         String ntpUrl = mBind.etNtpUrl.getText().toString().replaceAll(" ", "");
 
         if (TextUtils.isEmpty(host)) {

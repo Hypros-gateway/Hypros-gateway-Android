@@ -39,7 +39,6 @@
             android:src="@drawable/more" />
     </RelativeLayout>
 
-
     <TextView
         android:layout_width="match_parent"
         android:layout_height="50dp"
@@ -66,7 +65,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Scanr"
+            android:text="Scanner"
             android:textColor="@color/black_333333"
             android:textSize="15sp" />
 

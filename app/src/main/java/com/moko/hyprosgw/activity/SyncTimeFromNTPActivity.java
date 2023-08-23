@@ -56,7 +56,7 @@ public class SyncTimeFromNTPActivity extends BaseActivity<ActivitySyncFromNtpBin
             }
             return null;
         };
-        mBind.etNtpServer.setFilters(new InputFilter[]{new InputFilter.LengthFilter(255), inputFilter});
+        mBind.etNtpServer.setFilters(new InputFilter[]{new InputFilter.LengthFilter(64), inputFilter});
         getNtpServer();
     }
 

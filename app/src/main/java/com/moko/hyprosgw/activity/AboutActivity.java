@@ -49,15 +49,15 @@ public class AboutActivity extends BaseActivity<ActivityAboutBinding> {
     public void onFeedbackLog(View view) {
         if (isWindowLocked())
             return;
-        File trackerLog = new File(BaseApplication.PATH_LOGCAT + File.separator + "MKScannerGW.txt");
-        File trackerLogBak = new File(BaseApplication.PATH_LOGCAT + File.separator + "MKScannerGW.txt.bak");
+        File trackerLog = new File(BaseApplication.PATH_LOGCAT + File.separator + "HyprosGW.txt");
+        File trackerLogBak = new File(BaseApplication.PATH_LOGCAT + File.separator + "HyprosGW.txt.bak");
         File trackerCrashLog = new File(BaseApplication.PATH_LOGCAT + File.separator + "crash_log.txt");
         if (!trackerLog.exists() || !trackerLog.canRead()) {
             ToastUtils.showToast(this, "File is not exists!");
             return;
         }
         String address = "feedback@mokotechnology.com";
-        StringBuilder mailContent = new StringBuilder("MKScannerGW_");
+        StringBuilder mailContent = new StringBuilder("HyprosGW_");
         Calendar calendar = Calendar.getInstance();
         String date = MokoUtils.calendar2strDate(calendar, "yyyyMMdd");
         mailContent.append(date);
